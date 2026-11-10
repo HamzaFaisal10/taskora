@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     await supabase.auth.signOut();
     const tokenHash = await createDemoSignInToken();
-    const { error } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
+    const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });
     if (error) throw error;
     return NextResponse.redirect(`${origin}/w/demo`, { status: 303 });
   } catch (error) {

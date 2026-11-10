@@ -21,15 +21,18 @@ export async function resetDemo() {
 /** Creates a one-time sign-in token for the demo account (no password involved). */
 export async function createDemoSignInToken() {
   const admin = createAdminClient();
-  const email = demoEmail();
-  const link = () => admin.auth.admin.generateLink({ type: "magiclink", email });
+  // First visit after a fresh deploy: build the demo account and workspace before signing in.
+  const { data: existing } = await admin
+    .from("workspaces")
+    .select("id")
+    .eq("slug", "demo")
+    .maybeSingle();
+  if (!existing) await resetDemo();
 
-  let { data, error } = await link();
-  if (error?.code === "user_not_found" || error?.status === 404) {
-    // First visit after a fresh deploy: build the demo, then try again.
-    await resetDemo();
-    ({ data, error } = await link());
-  }
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: demoEmail(),
+  });
   if (error || !data.properties?.hashed_token) throw error ?? new Error("No demo token returned.");
   return data.properties.hashed_token;
 }
