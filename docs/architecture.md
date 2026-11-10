@@ -87,7 +87,29 @@ invoices and eight weeks of finished work for the charts.
 All dates are relative to **today**, so the demo always looks current. It runs once during setup
 (`npm run demo:setup`) and every night from a cron job, so every visitor gets a clean workspace.
 
-## 5. Testing
+## 5. Sign-in and the app shell
+
+- **Supabase Auth** handles email/password, password reset and (optionally) Google. Server actions in
+  `src/app/(auth)/actions.ts` validate input with Zod and turn Supabase errors into friendly messages.
+- **`src/proxy.ts`** (Next.js 16's replacement for middleware) refreshes the session cookie on every request
+  and sends signed-out visitors to `/login?next=…`. `safeNext()` only allows same-site redirects.
+- **One-click demo, no password.** `POST /api/demo` uses the service-role key on the server to create a
+  one-time sign-in token for the demo account and exchanges it for a session cookie. The demo account has
+  no password at all, so there is nothing to leak.
+- **Workspaces** are created through the `create_workspace()` RPC (reserved URLs like `demo` are refused).
+  Invites are rows in `workspace_invites`; the link `/invite/<token>` calls `accept_invite()`, which checks
+  the token, expiry and email address.
+- **The shell** (`src/components/shell`) is one sidebar used twice: fixed on desktop, a drawer on phones.
+  `⌘K` opens a command menu for pages, projects, workspaces and theme. The theme can be Dark, Light or
+  System.
+
+## 6. Keeping the demo fresh
+
+`/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
+carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
+Supabase project never pauses for inactivity.
+
+## 7. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
