@@ -36,10 +36,13 @@ export function AvatarStack({
   people,
   max = 3,
   size = 28,
+  ringClassName = "ring-bg",
 }: {
   people: { id: string; name: string | null; avatarUrl?: string | null }[];
   max?: number;
   size?: number;
+  /** Match the surface the stack sits on so each avatar gets a clean cut-out. */
+  ringClassName?: string;
 }) {
   const shown = people.slice(0, max);
   const rest = people.length - shown.length;
@@ -52,12 +55,15 @@ export function AvatarStack({
           src={p.avatarUrl}
           seed={p.id}
           size={size}
-          className={cn("ring-bg ring-2", i > 0 && "-ml-1")}
+          className={cn("ring-2", ringClassName, i > 0 && "-ml-0.5")}
         />
       ))}
       {rest > 0 && (
         <span
-          className="bg-elevated text-muted ring-bg -ml-1 flex items-center justify-center rounded-full text-[11px] ring-2"
+          className={cn(
+            "bg-elevated text-muted -ml-0.5 flex items-center justify-center rounded-full text-[11px] ring-2",
+            ringClassName,
+          )}
           style={{ width: size, height: size }}
           aria-label={`${rest} more members`}
         >

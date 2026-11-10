@@ -331,7 +331,7 @@ export function StyleguideView() {
           </article>
 
           <Card className="flex flex-col gap-4 p-4">
-            <AvatarStack people={team} max={3} />
+            <AvatarStack people={team} max={3} ringClassName="ring-card" />
             <div className="flex flex-col gap-2">
               <div className="flex text-[13px]">
                 <span className="flex-1">AI credits this month</span>
