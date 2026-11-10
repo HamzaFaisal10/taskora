@@ -3,8 +3,10 @@
  *
  *   npm run demo:setup
  *
- * Needs NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and DEMO_USER_PASSWORD
- * in .env.local. The same reset also runs every night from /api/cron/reset-demo.
+ * Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local.
+ * The demo account has no password: visitors enter it through the
+ * "Try the demo" button, which signs them in on the server.
+ * The same reset also runs every night from /api/cron/reset-demo.
  */
 import { createClient } from "@supabase/supabase-js";
 import { loadEnvConfig } from "@next/env";
@@ -14,13 +16,10 @@ loadEnvConfig(process.cwd());
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const email = (process.env.DEMO_USER_EMAIL ?? "demo@taskora.example").toLowerCase();
-const password = process.env.DEMO_USER_PASSWORD;
 
 async function main() {
-  if (!url || !serviceKey || !password) {
-    throw new Error(
-      "Set NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and DEMO_USER_PASSWORD in .env.local first.",
-    );
+  if (!url || !serviceKey) {
+    throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local first.");
   }
 
   const supabase = createClient(url, serviceKey, {
@@ -29,7 +28,6 @@ async function main() {
 
   const { error: createError } = await supabase.auth.admin.createUser({
     email,
-    password,
     email_confirm: true,
     user_metadata: { full_name: "Alex Morgan" },
   });

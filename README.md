@@ -41,5 +41,8 @@ CI runs all of these on every push (`.github/workflows/ci.yml`).
 
 1. Create a free project at [supabase.com](https://supabase.com).
 2. Open **SQL Editor** and run the files in `supabase/migrations` in order.
-3. Copy the Project URL, anon key and service role key into `.env.local` (and into Vercel).
-4. Create the demo account and data: `npm run demo:setup`.
+3. In **Authentication → URL Configuration**, set the Site URL to your deployed URL and add
+   `https://your-app.vercel.app/**` and `http://localhost:3000/**` as redirect URLs.
+4. Copy the Project URL, anon key and service role key into `.env.local` (and into Vercel).
+5. Create the demo account and data: `npm run demo:setup`. The demo account has no password; the
+   "Try the demo" button signs visitors in on the server.
