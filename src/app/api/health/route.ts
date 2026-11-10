@@ -1,3 +1,4 @@
+import { safeError } from "@/lib/env";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -12,7 +13,8 @@ export async function GET() {
       .limit(1);
     if (error) throw error;
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error("Health check failed", safeError(error));
     return NextResponse.json({ ok: false }, { status: 503 });
   }
 }

@@ -1,3 +1,4 @@
+import { safeError } from "@/lib/env";
 import { NextResponse, type NextRequest } from "next/server";
 import { createDemoSignInToken } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
     return NextResponse.redirect(`${origin}/w/demo`, { status: 303 });
   } catch (error) {
-    console.error("Demo sign-in failed", error);
+    console.error("Demo sign-in failed", safeError(error));
     return NextResponse.redirect(`${origin}/login?error=demo`, { status: 303 });
   }
 }
