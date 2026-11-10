@@ -44,3 +44,6 @@ next-env.d.ts
 # local tooling notes
 AGENTS.md
 CLAUDE.md
+
+# local test database
+.tmp/
