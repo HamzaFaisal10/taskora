@@ -27,7 +27,7 @@ export type Entry = {
   };
 };
 
-const hours = (s: number) => (s / 3600).toFixed(1);
+const hours = (s: number) => (s > 0 && s < 360 ? "<0.1" : (s / 3600).toFixed(1));
 
 function downloadCsv(entries: Entry[], weekStart: string) {
   const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
@@ -76,7 +76,9 @@ export function Timesheet({
     const map = new Map<string, { person: Entry["person"]; perDay: number[]; total: number }>();
     for (const e of visible) {
       const row = map.get(e.person.id) ?? { person: e.person, perDay: Array(7).fill(0), total: 0 };
-      const d = Math.floor((parseISO(e.startedAt).getTime() - parseISO(weekStart).getTime()) / 86_400_000);
+      const d = Math.floor(
+        (parseISO(e.startedAt).getTime() - parseISO(weekStart).getTime()) / 86_400_000,
+      );
       if (d >= 0 && d < 7) row.perDay[d] += e.seconds;
       row.total += e.seconds;
       map.set(e.person.id, row);

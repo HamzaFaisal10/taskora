@@ -164,13 +164,32 @@ All dates are relative to **today**, so the demo always looks current. It runs o
 - The task panel opens instantly with what the board already knows (`?task=` is a shallow URL change),
   then fills in comments, subtasks and history.
 
-## 9. Keeping the demo fresh
+## 9. Billing, time tracking and settings
+
+- **Plans** live in `src/lib/billing/plans.ts` (Free, Pro $8 and Business $16 per member a month). The
+  database enforces the same project, member and AI-credit limits.
+- **Two billing modes.** With `STRIPE_SECRET_KEY` (a test-mode key) an upgrade opens Stripe Checkout and
+  `/api/stripe/webhook` keeps the plan in sync. The webhook signature is checked with HMAC-SHA256 and a
+  five-minute replay window (`verifyWebhook`, unit tested). Without keys, and always in the demo
+  workspace, upgrades go to a **demo checkout** labelled "Demo payment — no real charge". It never asks for
+  card details and contacts no payment provider; it just switches the plan and records a demo invoice.
+- Plan columns can't be written from the browser (column-level grants), so plan changes run on the server
+  with the service role, after checking that the person is an owner or admin.
+- **Time tracking:** start and stop a timer from any task (one running timer per person, enforced by a
+  unique index), or log time by hand. The timer stays visible in the sidebar on every page. The Time page
+  shows a weekly grid per person and exports CSV.
+- **Settings:** workspace name and URL, delete workspace (owner only, type the name to confirm), shared
+  labels, members and invites, billing, and your profile.
+- Signing out only ends the current browser's session, so one visitor leaving the shared demo account
+  never signs out anyone else.
+
+## 10. Keeping the demo fresh
 
 `/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
 carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
 Supabase project never pauses for inactivity.
 
-## 10. Testing
+## 11. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
