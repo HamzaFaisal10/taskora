@@ -126,13 +126,29 @@ All dates are relative to **today**, so the demo always looks current. It runs o
   button closes it. It loads comments, subtasks, dependencies and the activity log on demand.
 - Long "Done" columns show the most recent cards first, with the rest one click away.
 
-## 7. Keeping the demo fresh
+## 7. Sprints, goals, automations and forms
+
+- **Sprints** (`/p/KEY/sprints`): one active sprint per project (a unique index enforces it). The burndown
+  is drawn from each task's `completed_at` against an ideal line; tasks without an estimate count as one
+  point. Completing a sprint moves unfinished tasks to the next sprint or the backlog.
+- **Automations run inside the database** (`…05_automations.sql`). Triggers on `tasks` and `task_labels`
+  call `run_automations()`, which checks each enabled rule's trigger and conditions and applies its actions
+  (assign, notify, set priority, move, add label, complete subtasks, stop timers). Actions change tasks,
+  which would fire the triggers again, so a transaction flag stops rules from triggering other rules and
+  looping. "Due in N days" rules run once a day from the cron job, once per task.
+- **Forms** have a public page at `/f/<slug>` that needs no account. It reads the form through
+  `get_public_form()` and submits through `submit_form()`, which validates answers and creates a task in
+  the project's Triage column. Anonymous visitors never touch a table directly.
+- **Goals** are measured by key results. A goal's progress is the average of its key results, and a key
+  result can go up or down (for example "first reply time: 9h → 4h").
+
+## 8. Keeping the demo fresh
 
 `/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
 carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
 Supabase project never pauses for inactivity.
 
-## 8. Testing
+## 9. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
