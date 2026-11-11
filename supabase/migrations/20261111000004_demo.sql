@@ -291,6 +291,23 @@ begin
     p_due => d + 5, p_estimate => 2, p_sprint => sp12, p_labels => array[l_design],
     p_created_at => n - interval '4 days');
 
+  -- Sprint 12 work finished so far (gives the burndown a realistic shape).
+  perform private.demo_task(p_mob, 'Pricing plans in the paywall', 'completed', 'high', v_owner, v_owner,
+    p_due => d - 6, p_estimate => 3, p_sprint => sp12, p_labels => array[l_payments],
+    p_created_at => n - interval '9 days', p_completed_at => n - interval '6 days 3 hours');
+  perform private.demo_task(p_mob, 'Session refresh on app resume', 'completed', 'medium', u_zain, u_zain,
+    p_due => d - 5, p_estimate => 2, p_sprint => sp12, p_labels => array[l_mobile, l_backend],
+    p_created_at => n - interval '9 days', p_completed_at => n - interval '5 days 5 hours');
+  perform private.demo_task(p_mob, 'Empty states for tasks and inbox', 'completed', 'low', u_sara, u_sara,
+    p_due => d - 4, p_estimate => 2, p_sprint => sp12, p_labels => array[l_design],
+    p_created_at => n - interval '8 days', p_completed_at => n - interval '4 days 2 hours');
+  perform private.demo_task(p_mob, 'Workspace switcher', 'completed', 'medium', u_ayesha, v_owner,
+    p_due => d - 3, p_estimate => 3, p_sprint => sp12, p_labels => array[l_mobile],
+    p_created_at => n - interval '8 days', p_completed_at => n - interval '2 days 6 hours');
+  perform private.demo_task(p_mob, 'Rate limit the auth endpoints', 'completed', 'high', u_omar, u_zain,
+    p_due => d - 1, p_estimate => 2, p_sprint => sp12, p_labels => array[l_backend],
+    p_created_at => n - interval '7 days', p_completed_at => n - interval '1 day 4 hours');
+
   t_push := private.demo_task(p_mob, 'Push notification preferences', 'unstarted', 'medium', u_ayesha, v_owner,
     p_start => d + 4, p_due => d + 6, p_estimate => 3, p_sprint => sp13, p_labels => array[l_mobile],
     p_created_at => n - interval '6 days');
