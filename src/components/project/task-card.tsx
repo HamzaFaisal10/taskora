@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, MessageSquare } from "lucide-react";
+import { CheckSquare, MessageSquare, Repeat } from "lucide-react";
 import { DueLabel } from "@/components/tasks/due-label";
 import { PriorityIcon } from "@/components/tasks/task-meta";
 import type { BoardTask } from "@/lib/project/types";
@@ -78,6 +78,11 @@ export function TaskCard({
           </span>
         )}
         <DueLabel date={task.dueDate} done={done} />
+        {task.recurring && (
+          <span title="Repeats" className="flex items-center">
+            <Repeat className="size-3.5" aria-label="Repeats" />
+          </span>
+        )}
         <span className="ml-auto" onPointerDown={stop} onClick={stop}>
           <AssigneePicker task={task} align="end">
             <button type="button" className="rounded-full" aria-label="Change assignee">

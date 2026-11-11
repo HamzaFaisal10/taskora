@@ -16,6 +16,7 @@ import {
   Star,
   Workflow,
   X,
+  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ProjectDialog } from "@/components/shell/new-project";
 import { ColumnsDialog } from "./columns-dialog";
+import { FieldsDialog } from "./custom-fields";
 import { useWorkspace } from "@/components/shell/workspace-provider";
 import { archiveProject, setFavorite } from "@/lib/project/project-actions";
 import { Avatar } from "@/components/ui/avatar";
@@ -205,6 +207,7 @@ function ProjectMenu() {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [columns, setColumns] = useState(false);
+  const [fieldsOpen, setFieldsOpen] = useState(false);
   const [pending, start] = useTransition();
   const favorite = projects.find((p) => p.id === project.id)?.favorite ?? false;
   return (
@@ -242,6 +245,11 @@ function ProjectMenu() {
             </DropdownMenuItem>
           )}
           {canEdit && (
+            <DropdownMenuItem onSelect={() => setFieldsOpen(true)}>
+              <SlidersHorizontal /> Custom fields
+            </DropdownMenuItem>
+          )}
+          {canEdit && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -266,6 +274,7 @@ function ProjectMenu() {
       </DropdownMenu>
       {editing && <ProjectDialog open={editing} onOpenChange={setEditing} project={project} />}
       {columns && <ColumnsDialog open={columns} onOpenChange={setColumns} />}
+      {fieldsOpen && <FieldsDialog open={fieldsOpen} onOpenChange={setFieldsOpen} />}
     </>
   );
 }

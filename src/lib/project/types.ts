@@ -39,7 +39,19 @@ export type BoardTask = {
   comments: number;
   completedAt: string | null;
   createdAt: string;
+  recurring: boolean;
 };
+
+export type FieldKind = "text" | "number" | "date" | "select" | "checkbox" | "person";
+export type CustomField = {
+  id: string;
+  name: string;
+  kind: FieldKind;
+  options: string[];
+  position: number;
+};
+export type FieldValue = string | number | boolean;
+export type Recurrence = { freq: "daily" | "weekdays" | "weekly" | "monthly"; interval: number };
 
 export type ProjectData = {
   project: {
@@ -55,11 +67,14 @@ export type ProjectData = {
   people: Person[];
   labels: Label[];
   sprints: Sprint[];
+  fields: CustomField[];
   canEdit: boolean;
 };
 
 export type TaskDetail = BoardTask & {
   description: string;
+  recurrence: Recurrence | null;
+  fieldValues: Record<string, FieldValue>;
   creator: Person | null;
   parent: { id: string; ref: string; title: string } | null;
   children: {

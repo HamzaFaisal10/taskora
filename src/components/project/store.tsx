@@ -122,6 +122,7 @@ export function ProjectProvider({
     (
       optimistic: (prev: BoardTask[]) => BoardTask[],
       action: () => Promise<{ ok: boolean; error?: string }>,
+      refreshAfter = false,
     ) => {
       const snapshot = tasks;
       setTasks(optimistic);
@@ -130,10 +131,10 @@ export function ProjectProvider({
         if (!res.ok) {
           setTasks(snapshot);
           toast.error(res.error ?? "Something went wrong.");
-        }
+        } else if (refreshAfter) router.refresh();
       });
     },
-    [tasks],
+    [tasks, router],
   );
 
   // Teammates' changes stream in and refresh the project (debounced, so a burst becomes one refresh).
@@ -177,6 +178,8 @@ export function ProjectProvider({
             return next;
           }),
         () => updateTask({ path: basePath, taskId, patch }),
+        // Finishing a task can create the next one of a repeating task, so fetch the board again.
+        !!patch.statusId && statusById.get(patch.statusId)?.category === "completed",
       );
     },
     move: (taskId, statusId, beforeId, afterId) => {
@@ -187,6 +190,7 @@ export function ProjectProvider({
           return prev.map((t) => (t.id === taskId ? { ...t, statusId, position } : t));
         },
         () => moveTask({ path: basePath, taskId, statusId, beforeId, afterId }),
+        statusById.get(statusId)?.category === "completed",
       );
     },
     setLabels: (taskId, labelIds) => {

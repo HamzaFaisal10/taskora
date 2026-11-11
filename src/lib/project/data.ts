@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
-import type { BoardTask, Label, Person, ProjectData, Sprint, Status } from "./types";
+import type { BoardTask, CustomField, Label, Person, ProjectData, Sprint, Status } from "./types";
 
 type TaskRow = {
   id: string;
@@ -20,6 +20,7 @@ type TaskRow = {
   position: number;
   completed_at: string | null;
   created_at: string;
+  recurrence: unknown;
   task_labels: { label_id: string }[];
   comments: { count: number }[];
 };
@@ -38,7 +39,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
     .maybeSingle();
   if (!project) notFound();
 
-  const [statuses, tasks, members, labels, sprints] = await Promise.all([
+  const [statuses, tasks, members, labels, sprints, fields] = await Promise.all([
     supabase
       .from("task_statuses")
       .select("id, name, color, category, position")
@@ -47,7 +48,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
     supabase
       .from("tasks")
       .select(
-        "id, number, title, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, task_labels(label_id), comments(count)",
+        "id, number, title, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, recurrence, task_labels(label_id), comments(count)",
       )
       .eq("project_id", project.id)
       .is("archived_at", null)
@@ -63,6 +64,11 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
       .select("id, name, goal, state, start_date, end_date")
       .eq("project_id", project.id)
       .order("start_date"),
+    supabase
+      .from("custom_fields")
+      .select("id, name, kind, options, position")
+      .eq("project_id", project.id)
+      .order("position"),
   ]);
   if (tasks.error) throw tasks.error;
 
@@ -126,6 +132,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
         comments: r.comments[0]?.count ?? 0,
         completedAt: r.completed_at,
         createdAt: r.created_at,
+        recurring: r.recurrence != null,
       })),
     people,
     labels: (labels.data ?? []) as Label[],
@@ -146,6 +153,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
       startDate: s.start_date,
       endDate: s.end_date,
     })),
+    fields: (fields.data ?? []) as CustomField[],
     canEdit: workspace.role !== "guest",
   };
 });

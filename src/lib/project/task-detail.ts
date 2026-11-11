@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import type { Person, TaskDetail } from "./types";
+import type { FieldValue, Person, Recurrence, TaskDetail } from "./types";
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const uuid = z.string().uuid();
@@ -25,7 +25,7 @@ export async function loadTaskDetail(
   const { data: t, error } = await supabase
     .from("tasks")
     .select(
-      "id, number, title, description, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, projects!inner(key), creator:profiles!tasks_creator_id_fkey(id, full_name, avatar_url), task_labels(label_id)",
+      "id, number, title, description, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, recurrence, projects!inner(key), creator:profiles!tasks_creator_id_fkey(id, full_name, avatar_url), task_labels(label_id), task_field_values(field_id, value)",
     )
     .eq("project_id", p.data.projectId)
     .eq("number", p.data.number)
@@ -37,6 +37,8 @@ export async function loadTaskDetail(
     projects: { key: string };
     creator: PersonRow;
     task_labels: { label_id: string }[];
+    task_field_values: { field_id: string; value: FieldValue }[];
+    recurrence: Recurrence | null;
   };
   const row = t as unknown as Row;
   const key = row.projects.key;
@@ -165,6 +167,9 @@ export async function loadTaskDetail(
       comments: (comments.data ?? []).length,
       completedAt: row.completed_at,
       createdAt: row.created_at,
+      recurring: row.recurrence != null,
+      recurrence: row.recurrence,
+      fieldValues: Object.fromEntries(row.task_field_values.map((v) => [v.field_id, v.value])),
       creator: person(row.creator),
       parent: par ? { id: par.id, ref: `${key}-${par.number}`, title: par.title } : null,
       children: childRows.map((c) => ({

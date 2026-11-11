@@ -709,6 +709,60 @@ async function main() {
     );
   });
 
+  await test("finishing a recurring task creates the next one", async () => {
+    await as(owner, async () => {
+      const t = await one<{ id: string; project_id: string; due_date: string }>(
+        `select id, project_id, due_date::text from public.tasks where title = 'Weekly client demo'`,
+      );
+      await q(
+        `update public.tasks set status_id = (select id from public.task_statuses
+           where project_id = $1 and category = 'completed' limit 1) where id = $2`,
+        [t.project_id, t.id],
+      );
+      const next = await one<{ due: string; src: string; cat: string; rec: string }>(
+        `select t.due_date::text as due, t.recurrence_source_id as src, s.category as cat, t.recurrence->>'freq' as rec
+         from public.tasks t join public.task_statuses s on s.id = t.status_id
+         where t.title = 'Weekly client demo' and t.completed_at is null`,
+      );
+      assert.equal(next.src, t.id);
+      assert.equal(next.cat, "unstarted");
+      assert.equal(next.rec, "weekly");
+      assert.ok(next.due > t.due_date);
+      const old = await one<{ rec: unknown }>(
+        `select recurrence as rec from public.tasks where id = $1`,
+        [t.id],
+      );
+      assert.equal(old.rec, null);
+    });
+  });
+
+  await test("custom field values must match the field", async () => {
+    await as(owner, async () => {
+      const f = await one<{ id: string; project_id: string }>(
+        `select id, project_id from public.custom_fields where name = 'Client'`,
+      );
+      const t = await one<{ id: string }>(
+        `select id from public.tasks where project_id = $1 and parent_id is null limit 1`,
+        [f.project_id],
+      );
+      await q("savepoint bad_value");
+      await rejects(
+        q(
+          `insert into public.task_field_values (task_id, field_id, value) values ($1, $2, '"Nobody"')
+           on conflict (task_id, field_id) do update set value = excluded.value`,
+          [t.id, f.id],
+        ),
+        /Invalid value/,
+      );
+      await q("rollback to savepoint bad_value");
+      await q(
+        `insert into public.task_field_values (task_id, field_id, value) values ($1, $2, '"Northwind"')
+               on conflict (task_id, field_id) do update set value = excluded.value`,
+        [t.id, f.id],
+      );
+    });
+  });
+
   await db.end();
   console.log(`\n${passed} passed, ${failures.length} failed`);
   if (failures.length) process.exit(1);

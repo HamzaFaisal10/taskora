@@ -9,6 +9,7 @@ import {
   CircleDot,
   Gauge,
   Hash,
+  Repeat,
   Link2,
   Loader2,
   MoreHorizontal,
@@ -34,6 +35,7 @@ import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
 import { useLive } from "@/lib/realtime/use-live";
 import { AiAssist } from "./ai-assist";
+import { FieldValueEditor, fieldIcon, RepeatField } from "./custom-fields";
 import { BlockersSection } from "./blockers";
 import { CommentBody, MentionInput, Reactions } from "./comments";
 import { AttachmentsSection } from "./attachments-section";
@@ -208,6 +210,7 @@ function PanelBody({
     archive,
     openTask,
     create,
+    fields,
   } = store;
   const [local, setTask] = useState(detail);
   const [prevDetail, setPrevDetail] = useState(detail);
@@ -429,6 +432,36 @@ function PanelBody({
               </select>
             </Property>
           )}
+          {!task.parent && !partial && (
+            <Property icon={Repeat} label="Repeat">
+              <RepeatField
+                taskId={task.id}
+                value={task.recurrence}
+                disabled={!canEdit}
+                onSaved={(r) => setTask((t) => ({ ...t, recurrence: r, recurring: !!r }))}
+              />
+            </Property>
+          )}
+          {!partial &&
+            fields.map((f) => (
+              <Property key={f.id} icon={fieldIcon(f.kind)} label={f.name}>
+                <FieldValueEditor
+                  key={`${task.id}:${f.id}`}
+                  taskId={task.id}
+                  field={f}
+                  value={task.fieldValues[f.id]}
+                  disabled={!canEdit}
+                  onSaved={(v) =>
+                    setTask((t) => {
+                      const fieldValues = { ...t.fieldValues };
+                      if (v === null) delete fieldValues[f.id];
+                      else fieldValues[f.id] = v;
+                      return { ...t, fieldValues };
+                    })
+                  }
+                />
+              </Property>
+            ))}
         </div>
 
         {!partial && (
@@ -710,6 +743,8 @@ export function TaskPanel() {
     ? {
         ...boardTask,
         description: "",
+        recurrence: null,
+        fieldValues: {},
         creator: null,
         parent: null,
         children: [],

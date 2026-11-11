@@ -19,7 +19,7 @@ row level security) · dnd-kit · Stripe (optional) · OpenAI (optional) · Vite
 ## Highlights
 
 - **Security in the database.** Row level security on all 29 tables, column-level grants for billing fields,
-  and plan limits enforced by triggers. 31 database tests run against real Postgres in CI.
+  and plan limits enforced by triggers. 34 database tests run against real Postgres in CI.
 - **Automations run inside Postgres.** Rules fire from triggers the moment a task changes, with a guard that
   stops one rule from setting off another in a loop.
 - **Fast interactions.** Optimistic updates everywhere, a task panel that opens instantly, and reads that
