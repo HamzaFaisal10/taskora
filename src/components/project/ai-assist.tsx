@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Tooltip } from "@/components/ui/menu";
-import { askAi, type AiAnswer, type AiKind } from "@/lib/ai/actions";
+import type { AiAnswer, AiKind } from "@/lib/ai/run";
+import { createSubtasks } from "@/lib/project/actions";
 import { cn } from "@/lib/utils";
 import { useProject } from "./store";
 
@@ -34,7 +35,7 @@ export function AiAssist({
   onUseDescription: (text: string) => void;
   onSubtasksAdded: () => void;
 }) {
-  const { project, statuses, create, canEdit } = useProject();
+  const { project, statuses, canEdit, refresh } = useProject();
   const [answer, setAnswer] = useState<AiAnswer | null>(null);
   const [running, setRunning] = useState<AiKind | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
@@ -44,7 +45,19 @@ export function AiAssist({
 
   const run = async (kind: AiKind) => {
     setRunning(kind);
-    const res = await askAi({ kind, projectId: project.id, number });
+    const res: { ok: true; data: AiAnswer } | { ok: false; error: string } = await fetch(
+      "/api/ai",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind, projectId: project.id, number }),
+      },
+    )
+      .then((r) => r.json())
+      .catch(() => ({
+        ok: false,
+        error: "Couldn't reach the AI assistant. Check your connection.",
+      }));
     setRunning(null);
     if (!res.ok) return void toast.error(res.error);
     setAnswer(res.data);
@@ -56,8 +69,14 @@ export function AiAssist({
       if (answer?.kind !== "breakdown") return;
       const todo = statuses.find((s) => s.category === "unstarted") ?? statuses[0];
       const chosen = answer.subtasks.filter((_, i) => picked.has(i));
-      for (const s of chosen)
-        await create(s.title, { parentId: taskId, statusId: todo?.id, estimate: s.estimate });
+      const res = await createSubtasks({
+        projectId: project.id,
+        parentId: taskId,
+        statusId: todo?.id ?? null,
+        items: chosen.map((s) => ({ title: s.title, estimate: s.estimate })),
+      });
+      if (!res.ok) return void toast.error(res.error);
+      refresh();
       toast.success(`Added ${chosen.length} subtasks`);
       setAnswer(null);
       onSubtasksAdded();

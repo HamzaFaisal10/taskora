@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/surface";
-import { addComment, getTaskDetail } from "@/lib/project/actions";
+import { addComment } from "@/lib/project/actions";
 import { AiAssist } from "./ai-assist";
 import type { TaskDetail } from "@/lib/project/types";
 import { cn } from "@/lib/utils";
@@ -615,6 +615,15 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
   );
 }
 
+type DetailResult = { ok: true; data: TaskDetail } | { ok: false; error: string };
+
+/** Reads go through a GET route so they never wait behind edits in the server-action queue. */
+function fetchDetail(projectId: string, number: number): Promise<DetailResult> {
+  return fetch(`/api/tasks/${projectId}/${number}`, { cache: "no-store" })
+    .then((r) => r.json() as Promise<DetailResult>)
+    .catch(() => ({ ok: false, error: "Couldn't load the task. Check your connection." }));
+}
+
 function PanelSkeleton() {
   return (
     <div className="space-y-4 p-6" aria-busy>
@@ -638,7 +647,7 @@ export function TaskPanel() {
     ? Number(openRef.split("-")[1])
     : NaN;
 
-  const apply = useCallback((res: Awaited<ReturnType<typeof getTaskDetail>>) => {
+  const apply = useCallback((res: DetailResult) => {
     if (res.ok) {
       setDetail(res.data);
       setError(null);
@@ -647,7 +656,7 @@ export function TaskPanel() {
   }, []);
 
   const load = useCallback(() => {
-    if (Number.isFinite(number)) getTaskDetail(project.id, number).then(apply);
+    if (Number.isFinite(number)) fetchDetail(project.id, number).then(apply);
   }, [project.id, number, apply]);
 
   const [loadedFor, setLoadedFor] = useState<number | null>(null);
@@ -662,7 +671,7 @@ export function TaskPanel() {
   useEffect(() => {
     if (!Number.isFinite(number)) return;
     let cancelled = false;
-    getTaskDetail(project.id, number).then((res) => {
+    fetchDetail(project.id, number).then((res) => {
       if (!cancelled) apply(res);
     });
     return () => {

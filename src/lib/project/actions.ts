@@ -1,9 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import type { Person, TaskDetail } from "./types";
+import { loadTaskDetail } from "./task-detail";
+import type { TaskDetail } from "./types";
 
 type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -18,10 +18,6 @@ const message = (e: { message?: string; code?: string } | null) =>
   e?.code === "42501" || /row-level security/i.test(e?.message ?? "")
     ? "You don't have permission to change this."
     : "Something went wrong. Please try again.";
-
-function refresh(path: string) {
-  revalidatePath(path, "layout");
-}
 
 export async function moveTask(input: {
   path: string;
@@ -42,7 +38,6 @@ export async function moveTask(input: {
     p_after: p.data.afterId,
   });
   if (error) return fail(message(error));
-  refresh(input.path);
   return { ok: true, data: data as number };
 }
 
@@ -95,7 +90,6 @@ export async function updateTask(input: {
         ? "Start date must be before the due date."
         : message(error),
     );
-  refresh(input.path);
   return { ok: true, data: null };
 }
 
@@ -136,7 +130,6 @@ export async function createTask(input: {
     .select("id, number")
     .single();
   if (error) return fail(message(error));
-  refresh(input.path);
   return { ok: true, data };
 }
 
@@ -149,7 +142,6 @@ export async function archiveTask(input: { path: string; taskId: string }): Prom
     .update({ archived_at: new Date().toISOString() })
     .eq("id", id.data);
   if (error) return fail(message(error));
-  refresh(input.path);
   return { ok: true, data: null };
 }
 
@@ -184,7 +176,6 @@ export async function setTaskLabels(input: {
       .in("label_id", remove);
     if (error) return fail(message(error));
   }
-  refresh(input.path);
   return { ok: true, data: null };
 }
 
@@ -205,166 +196,51 @@ export async function addComment(input: {
     .from("comments")
     .insert({ task_id: p.data.taskId, body: p.data.body, author_id: user?.id });
   if (error) return fail(message(error));
-  refresh(input.path);
   return { ok: true, data: null };
 }
-
-type PersonRow = { id: string; full_name: string; avatar_url: string | null } | null;
-const person = (p: PersonRow): Person | null =>
-  p ? { id: p.id, name: p.full_name || "Unnamed", avatarUrl: p.avatar_url } : null;
 
 /** Full detail for the task panel, looked up by project and number (the "MOB-123" in the URL). */
 export async function getTaskDetail(
   projectId: string,
   number: number,
 ): Promise<Result<TaskDetail>> {
+  return loadTaskDetail(projectId, number);
+}
+
+/** Several subtasks in one round trip (used by the AI breakdown). */
+export async function createSubtasks(input: {
+  projectId: string;
+  parentId: string;
+  statusId: string | null;
+  items: { title: string; estimate: number | null }[];
+}): Promise<Result<number>> {
   const p = z
-    .object({ projectId: uuid, number: z.number().int().positive() })
-    .safeParse({ projectId, number });
-  if (!p.success) return fail("Invalid task.");
+    .object({
+      projectId: uuid,
+      parentId: uuid,
+      statusId: uuid.nullable(),
+      items: z
+        .array(
+          z.object({
+            title: z.string().trim().min(1).max(300),
+            estimate: z.number().int().min(0).max(100).nullable(),
+          }),
+        )
+        .min(1)
+        .max(12),
+    })
+    .safeParse(input);
+  if (!p.success) return fail("Invalid subtasks.");
   const supabase = await createClient();
-
-  const { data: t, error } = await supabase
-    .from("tasks")
-    .select(
-      "id, number, title, description, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, projects!inner(key), creator:profiles!tasks_creator_id_fkey(id, full_name, avatar_url), task_labels(label_id)",
-    )
-    .eq("project_id", p.data.projectId)
-    .eq("number", p.data.number)
-    .is("archived_at", null)
-    .maybeSingle();
-  if (error || !t) return fail("This task doesn't exist or was archived.");
-
-  type Row = typeof t & {
-    projects: { key: string };
-    creator: PersonRow;
-    task_labels: { label_id: string }[];
-  };
-  const row = t as unknown as Row;
-  const key = row.projects.key;
-
-  const [parent, children, deps, comments, activity] = await Promise.all([
-    row.parent_id
-      ? supabase.from("tasks").select("id, number, title").eq("id", row.parent_id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from("tasks")
-      .select("id, number, title, status_id, assignee_id, task_statuses!inner(category)")
-      .eq("parent_id", row.id)
-      .is("archived_at", null)
-      .order("created_at"),
-    supabase
-      .from("task_dependencies")
-      .select(
-        "blocker:tasks!task_dependencies_blocked_by_id_fkey(id, number, title, completed_at, projects!inner(key))",
-      )
-      .eq("task_id", row.id),
-    supabase
-      .from("comments")
-      .select(
-        "id, body, created_at, edited_at, author:profiles!comments_author_id_fkey(id, full_name, avatar_url)",
-      )
-      .eq("task_id", row.id)
-      .order("created_at"),
-    supabase
-      .from("activity")
-      .select(
-        "id, action, meta, created_at, actor:profiles!activity_actor_id_fkey(id, full_name, avatar_url)",
-      )
-      .eq("task_id", row.id)
-      .order("created_at", { ascending: false })
-      .limit(30),
-  ]);
-
-  type Child = {
-    id: string;
-    number: number;
-    title: string;
-    status_id: string;
-    assignee_id: string | null;
-    task_statuses: { category: string };
-  };
-  type Dep = {
-    blocker: {
-      id: string;
-      number: number;
-      title: string;
-      completed_at: string | null;
-      projects: { key: string };
-    } | null;
-  };
-  type C = {
-    id: string;
-    body: string;
-    created_at: string;
-    edited_at: string | null;
-    author: PersonRow;
-  };
-  type A = {
-    id: string;
-    action: string;
-    meta: Record<string, unknown>;
-    created_at: string;
-    actor: PersonRow;
-  };
-  const childRows = (children.data ?? []) as unknown as Child[];
-  const par = parent.data as { id: string; number: number; title: string } | null;
-
-  return {
-    ok: true,
-    data: {
-      id: row.id,
-      number: row.number,
-      ref: `${key}-${row.number}`,
-      title: row.title,
-      description: row.description,
-      statusId: row.status_id,
-      priority: row.priority,
-      assigneeId: row.assignee_id,
-      sprintId: row.sprint_id,
-      startDate: row.start_date,
-      dueDate: row.due_date,
-      estimate: row.estimate,
-      position: row.position,
-      labelIds: row.task_labels.map((l) => l.label_id),
-      subtasks: {
-        total: childRows.length,
-        done: childRows.filter((c) => c.task_statuses.category === "completed").length,
-      },
-      comments: (comments.data ?? []).length,
-      completedAt: row.completed_at,
-      createdAt: row.created_at,
-      creator: person(row.creator),
-      parent: par ? { id: par.id, ref: `${key}-${par.number}`, title: par.title } : null,
-      children: childRows.map((c) => ({
-        id: c.id,
-        ref: `${key}-${c.number}`,
-        title: c.title,
-        statusId: c.status_id,
-        assigneeId: c.assignee_id,
-      })),
-      blockedBy: ((deps.data ?? []) as unknown as Dep[])
-        .filter((d) => d.blocker)
-        .map((d) => ({
-          id: d.blocker!.id,
-          ref: `${d.blocker!.projects.key}-${d.blocker!.number}`,
-          title: d.blocker!.title,
-          done: !!d.blocker!.completed_at,
-        })),
-      commentList: ((comments.data ?? []) as unknown as C[]).map((c) => ({
-        id: c.id,
-        body: c.body,
-        createdAt: c.created_at,
-        editedAt: c.edited_at,
-        author: person(c.author),
-      })),
-      activity: ((activity.data ?? []) as unknown as A[]).map((a) => ({
-        id: a.id,
-        action: a.action,
-        meta: a.meta,
-        createdAt: a.created_at,
-        actor: person(a.actor),
-      })),
-    },
-  };
+  const { error } = await supabase.from("tasks").insert(
+    p.data.items.map((i) => ({
+      project_id: p.data.projectId,
+      parent_id: p.data.parentId,
+      status_id: p.data.statusId ?? undefined,
+      title: i.title,
+      estimate: i.estimate,
+    })),
+  );
+  if (error) return fail(message(error));
+  return { ok: true, data: p.data.items.length };
 }

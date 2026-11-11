@@ -36,8 +36,11 @@ type Store = ProjectData & {
       dueDate?: string | null;
       parentId?: string | null;
       estimate?: number | null;
+      refresh?: boolean;
     },
   ) => Promise<string | null>;
+  /** Re-fetch the project from the server. */
+  refresh: () => void;
   setLabels: (taskId: string, labelIds: string[]) => void;
   archive: (taskId: string) => void;
   pending: boolean;
@@ -147,6 +150,7 @@ export function ProjectProvider({
     openTask,
     openRef,
     pending,
+    refresh: () => router.refresh(),
     update: (taskId, patch) => {
       run(
         (prev) =>
@@ -185,12 +189,18 @@ export function ProjectProvider({
       );
     },
     create: async (title, opts) => {
-      const res = await createTask({ path: basePath, projectId: data.project.id, title, ...opts });
+      const { refresh: shouldRefresh = true, ...fields } = opts ?? {};
+      const res = await createTask({
+        path: basePath,
+        projectId: data.project.id,
+        title,
+        ...fields,
+      });
       if (!res.ok) {
         toast.error(res.error);
         return null;
       }
-      router.refresh();
+      if (shouldRefresh) router.refresh();
       return `${data.project.key}-${res.data.number}`;
     },
   };

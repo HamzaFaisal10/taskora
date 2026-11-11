@@ -1,7 +1,6 @@
-"use server";
-
+import "server-only";
 import { z } from "zod";
-import { getTaskDetail } from "@/lib/project/actions";
+import { loadTaskDetail } from "@/lib/project/task-detail";
 import { createClient } from "@/lib/supabase/server";
 import {
   breakdownTask,
@@ -34,7 +33,7 @@ export async function askAi(input: {
     .safeParse(input);
   if (!p.success) return { ok: false, error: "Invalid request." };
 
-  const detail = await getTaskDetail(p.data.projectId, p.data.number);
+  const detail = await loadTaskDetail(p.data.projectId, p.data.number);
   if (!detail.ok) return detail;
   const task = detail.data;
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { format, parseISO } from "date-fns";
 
 /**
  * Taskora's AI helpers. With OPENAI_API_KEY set they call OpenAI; without it they run in demo mode and
@@ -144,7 +145,7 @@ function demoSummary(t: TaskContext): string[] {
   const openBlockers = t.blockers.filter((b) => !b.done);
   const last = t.comments.at(-1);
   const lines = [
-    `${t.status}${t.assignee ? ` with ${t.assignee}` : ", nobody assigned yet"}${t.dueDate ? `, due ${t.dueDate}` : ""}.` +
+    `${t.status}${t.assignee ? ` with ${t.assignee}` : ", nobody assigned yet"}${t.dueDate ? `, due ${format(parseISO(t.dueDate), "MMM d")}` : ""}.` +
       (t.subtasks.length ? ` ${done} of ${t.subtasks.length} subtasks done.` : ""),
   ];
   if (openBlockers.length)

@@ -105,7 +105,10 @@ export function workload(tasks: AnalyticsTask[], now = new Date()): Workload[] {
     if (t.dueDate && t.dueDate < today) w.overdue += 1;
     map.set(t.assigneeId, w);
   }
-  return [...map.values()].sort((a, b) => b.open - a.open);
+  // Busiest people first; unassigned work is listed last so it reads as a separate bucket.
+  return [...map.values()].sort(
+    (a, b) => Number(a.personId === null) - Number(b.personId === null) || b.open - a.open,
+  );
 }
 
 export type ProjectStats = {

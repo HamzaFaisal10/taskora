@@ -29,6 +29,7 @@ describe("demo AI", () => {
     const { lines } = await summarizeTask(base);
     expect(lines.length).toBeLessThanOrEqual(3);
     expect(lines[0]).toContain("Alex Morgan");
+    expect(lines[0]).toContain("due Nov 12");
     expect(lines[0]).toContain("1 of 1 subtasks done");
     expect(lines.join(" ")).toContain("Zain Malik");
   });
