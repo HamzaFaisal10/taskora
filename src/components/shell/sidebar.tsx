@@ -97,6 +97,7 @@ function WorkspaceSwitcher() {
 function UserMenu() {
   const { viewer, workspace } = useWorkspace();
   const { theme, setTheme } = useTheme();
+  const [signingOut, startSignOut] = useTransition();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="rounded-control hover:bg-elevated flex h-11 w-full min-w-0 items-center gap-2.5 px-2 text-left transition-colors outline-none">
@@ -118,13 +119,16 @@ function UserMenu() {
           ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <form action={signOut}>
-          <DropdownMenuItem asChild>
-            <button type="submit" className="w-full">
-              <LogOut /> {workspace.isDemo ? "Leave demo" : "Sign out"}
-            </button>
-          </DropdownMenuItem>
-        </form>
+        {/* Called directly: a form inside the menu is removed when the menu closes, before it submits. */}
+        <DropdownMenuItem
+          disabled={signingOut}
+          onSelect={(e) => {
+            e.preventDefault();
+            startSignOut(() => signOut());
+          }}
+        >
+          <LogOut /> {workspace.isDemo ? "Leave demo" : "Sign out"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
