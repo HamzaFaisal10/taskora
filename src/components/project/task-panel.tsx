@@ -182,7 +182,15 @@ function AutoTextarea({
   );
 }
 
-function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void }) {
+function PanelBody({
+  detail,
+  reload,
+  partial = false,
+}: {
+  detail: TaskDetail;
+  reload: () => void;
+  partial?: boolean;
+}) {
   const store = useProject();
   const {
     statuses,
@@ -418,198 +426,225 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
           )}
         </div>
 
-        <AiAssist
-          taskId={task.id}
-          number={task.number}
-          hasDescription={task.description.trim().length > 0}
-          onUseDescription={(text) => patch({ description: text })}
-          onSubtasksAdded={reload}
-        />
+        {!partial && (
+          <AiAssist
+            taskId={task.id}
+            number={task.number}
+            hasDescription={task.description.trim().length > 0}
+            onUseDescription={(text) => patch({ description: text })}
+            onSubtasksAdded={reload}
+          />
+        )}
 
         <section className="mt-6">
           <h3 className="text-subtle mb-1.5 text-xs font-medium tracking-wide uppercase">
             Description
           </h3>
-          <AutoTextarea
-            value={task.description}
-            disabled={!canEdit}
-            ariaLabel="Description"
-            placeholder="Add more detail, acceptance criteria or links…"
-            onCommit={(v) => patch({ description: v })}
-            className="text-fg-2 hover:bg-surface focus:bg-surface rounded-control -mx-2 min-h-20 px-2 py-1.5 text-sm leading-relaxed"
-          />
-        </section>
-
-        {task.blockedBy.length > 0 && (
-          <section className="mt-6">
-            <h3 className="text-subtle mb-2 text-xs font-medium tracking-wide uppercase">
-              Blocked by
-            </h3>
-            <ul className="space-y-1">
-              {task.blockedBy.map((b) => (
-                <li key={b.id}>
-                  <button
-                    type="button"
-                    onClick={() => openTask(b.ref)}
-                    className="hover:bg-elevated rounded-control flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
-                  >
-                    <span
-                      className={cn("size-2 rounded-full", b.done ? "bg-success" : "bg-danger")}
-                      aria-label={b.done ? "Done" : "Open"}
-                    />
-                    <span className="text-subtle font-mono text-[11px]">{b.ref}</span>
-                    <span className={cn("truncate", b.done && "text-muted line-through")}>
-                      {b.title}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="mt-6">
-          <h3 className="text-subtle mb-2 flex items-center gap-2 text-xs font-medium tracking-wide uppercase">
-            Subtasks
-            {task.children.length > 0 && (
-              <span className="normal-case">
-                {
-                  task.children.filter((c) =>
-                    isDoneCategory(statusById.get(c.statusId)?.category ?? ""),
-                  ).length
-                }
-                /{task.children.length}
-              </span>
-            )}
-          </h3>
-          <ul className="space-y-0.5">
-            {task.children.map((c) => {
-              const s = statusById.get(c.statusId);
-              const done = isDoneCategory(s?.category ?? "");
-              return (
-                <li
-                  key={c.id}
-                  className="hover:bg-surface rounded-control flex items-center gap-2.5 px-2 py-1.5"
-                >
-                  <Checkbox
-                    checked={done}
-                    disabled={!canEdit}
-                    aria-label={done ? `Mark ${c.ref} as not done` : `Mark ${c.ref} as done`}
-                    onCheckedChange={(v) => {
-                      const target = v ? doneStatus : todoStatus;
-                      if (!target) return;
-                      setTask((t) => ({
-                        ...t,
-                        children: t.children.map((x) =>
-                          x.id === c.id ? { ...x, statusId: target.id } : x,
-                        ),
-                      }));
-                      update(c.id, { statusId: target.id });
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => openTask(c.ref)}
-                    className={cn(
-                      "min-w-0 flex-1 truncate text-left text-sm",
-                      done && "text-muted line-through",
-                    )}
-                  >
-                    {c.title}
-                  </button>
-                  <PersonAvatar id={c.assigneeId} size={18} />
-                </li>
-              );
-            })}
-          </ul>
-          {canEdit && (
-            <form onSubmit={addSubtask} className="mt-1 flex items-center gap-2.5 px-2">
-              <Plus className="text-subtle size-4" aria-hidden />
-              <input
-                value={subtask}
-                onChange={(e) => setSubtask(e.target.value)}
-                placeholder="Add subtask"
-                aria-label="New subtask title"
-                className="placeholder:text-subtle h-8 flex-1 bg-transparent text-sm outline-none"
-              />
-            </form>
+          {partial ? (
+            <div className="space-y-2 py-1.5" aria-hidden>
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-4/5" />
+            </div>
+          ) : (
+            <AutoTextarea
+              value={task.description}
+              disabled={!canEdit}
+              ariaLabel="Description"
+              placeholder="Add more detail, acceptance criteria or links…"
+              onCommit={(v) => patch({ description: v })}
+              className="text-fg-2 hover:bg-surface focus:bg-surface rounded-control -mx-2 min-h-20 px-2 py-1.5 text-sm leading-relaxed"
+            />
           )}
         </section>
 
-        <section className="border-border mt-8 border-t pt-5">
-          <h3 className="text-subtle mb-3 text-xs font-medium tracking-wide uppercase">Comments</h3>
-          <ul className="space-y-4">
-            {task.commentList.map((c) => (
-              <li key={c.id} className="flex gap-3">
-                <Avatar
-                  name={c.author?.name ?? "Former member"}
-                  src={c.author?.avatarUrl}
-                  seed={c.author?.id}
-                  size={28}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px]">
-                    <span className="font-medium">{c.author?.name ?? "Former member"}</span>{" "}
-                    <time className="text-subtle text-xs" dateTime={c.createdAt}>
-                      {ago(c.createdAt)}
-                    </time>
-                  </p>
-                  <p className="text-fg-2 mt-0.5 text-sm leading-relaxed whitespace-pre-wrap">
-                    {c.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <form
-            className="bg-card border-border focus-within:border-accent rounded-card mt-4 border p-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (comment.trim()) postComment();
-            }}
-          >
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && comment.trim()) postComment();
-              }}
-              rows={2}
-              placeholder="Write a comment…"
-              aria-label="Write a comment"
-              className="placeholder:text-subtle w-full resize-none bg-transparent px-1 text-sm outline-none"
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-subtle px-1 text-[11px]">⌘ Enter to send</span>
-              <Button type="submit" size="sm" loading={posting} disabled={!comment.trim()}>
-                Comment
-              </Button>
-            </div>
-          </form>
-        </section>
+        {partial ? (
+          <div className="mt-8 space-y-3" aria-busy>
+            <span className="sr-only">Loading subtasks and comments</span>
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="mt-6 h-3 w-24" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : (
+          <>
+            {task.blockedBy.length > 0 && (
+              <section className="mt-6">
+                <h3 className="text-subtle mb-2 text-xs font-medium tracking-wide uppercase">
+                  Blocked by
+                </h3>
+                <ul className="space-y-1">
+                  {task.blockedBy.map((b) => (
+                    <li key={b.id}>
+                      <button
+                        type="button"
+                        onClick={() => openTask(b.ref)}
+                        className="hover:bg-elevated rounded-control flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
+                      >
+                        <span
+                          className={cn("size-2 rounded-full", b.done ? "bg-success" : "bg-danger")}
+                          aria-label={b.done ? "Done" : "Open"}
+                        />
+                        <span className="text-subtle font-mono text-[11px]">{b.ref}</span>
+                        <span className={cn("truncate", b.done && "text-muted line-through")}>
+                          {b.title}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-        <section className="mt-8 pb-6">
-          <h3 className="text-subtle mb-3 text-xs font-medium tracking-wide uppercase">Activity</h3>
-          <ol className="border-border space-y-3 border-l pl-4">
-            {task.activity.map((a) => (
-              <li key={a.id} className="text-muted relative text-[13px]">
-                <span
-                  className="bg-border absolute top-1.5 -left-[21px] size-2 rounded-full"
-                  aria-hidden
+            <section className="mt-6">
+              <h3 className="text-subtle mb-2 flex items-center gap-2 text-xs font-medium tracking-wide uppercase">
+                Subtasks
+                {task.children.length > 0 && (
+                  <span className="normal-case">
+                    {
+                      task.children.filter((c) =>
+                        isDoneCategory(statusById.get(c.statusId)?.category ?? ""),
+                      ).length
+                    }
+                    /{task.children.length}
+                  </span>
+                )}
+              </h3>
+              <ul className="space-y-0.5">
+                {task.children.map((c) => {
+                  const s = statusById.get(c.statusId);
+                  const done = isDoneCategory(s?.category ?? "");
+                  return (
+                    <li
+                      key={c.id}
+                      className="hover:bg-surface rounded-control flex items-center gap-2.5 px-2 py-1.5"
+                    >
+                      <Checkbox
+                        checked={done}
+                        disabled={!canEdit}
+                        aria-label={done ? `Mark ${c.ref} as not done` : `Mark ${c.ref} as done`}
+                        onCheckedChange={(v) => {
+                          const target = v ? doneStatus : todoStatus;
+                          if (!target) return;
+                          setTask((t) => ({
+                            ...t,
+                            children: t.children.map((x) =>
+                              x.id === c.id ? { ...x, statusId: target.id } : x,
+                            ),
+                          }));
+                          update(c.id, { statusId: target.id });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => openTask(c.ref)}
+                        className={cn(
+                          "min-w-0 flex-1 truncate text-left text-sm",
+                          done && "text-muted line-through",
+                        )}
+                      >
+                        {c.title}
+                      </button>
+                      <PersonAvatar id={c.assigneeId} size={18} />
+                    </li>
+                  );
+                })}
+              </ul>
+              {canEdit && (
+                <form onSubmit={addSubtask} className="mt-1 flex items-center gap-2.5 px-2">
+                  <Plus className="text-subtle size-4" aria-hidden />
+                  <input
+                    value={subtask}
+                    onChange={(e) => setSubtask(e.target.value)}
+                    placeholder="Add subtask"
+                    aria-label="New subtask title"
+                    className="placeholder:text-subtle h-8 flex-1 bg-transparent text-sm outline-none"
+                  />
+                </form>
+              )}
+            </section>
+
+            <section className="border-border mt-8 border-t pt-5">
+              <h3 className="text-subtle mb-3 text-xs font-medium tracking-wide uppercase">
+                Comments
+              </h3>
+              <ul className="space-y-4">
+                {task.commentList.map((c) => (
+                  <li key={c.id} className="flex gap-3">
+                    <Avatar
+                      name={c.author?.name ?? "Former member"}
+                      src={c.author?.avatarUrl}
+                      seed={c.author?.id}
+                      size={28}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px]">
+                        <span className="font-medium">{c.author?.name ?? "Former member"}</span>{" "}
+                        <time className="text-subtle text-xs" dateTime={c.createdAt}>
+                          {ago(c.createdAt)}
+                        </time>
+                      </p>
+                      <p className="text-fg-2 mt-0.5 text-sm leading-relaxed whitespace-pre-wrap">
+                        {c.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <form
+                className="bg-card border-border focus-within:border-accent rounded-card mt-4 border p-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (comment.trim()) postComment();
+                }}
+              >
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && comment.trim())
+                      postComment();
+                  }}
+                  rows={2}
+                  placeholder="Write a comment…"
+                  aria-label="Write a comment"
+                  className="placeholder:text-subtle w-full resize-none bg-transparent px-1 text-sm outline-none"
                 />
-                <span className="text-fg font-medium">{a.actor?.name ?? "Taskora"}</span>{" "}
-                {a.action === "automation_ran"
-                  ? `ran the “${String(a.meta.name ?? "automation")}” automation`
-                  : (ACTIVITY[a.action] ?? a.action.replace(/_/g, " "))}
-                <span className="text-subtle"> · {ago(a.createdAt)}</span>
-              </li>
-            ))}
-            <li className="text-subtle text-[13px]">
-              Created {format(parseISO(task.createdAt), "MMM d, yyyy")}
-              {task.creator ? ` by ${task.creator.name}` : ""}
-            </li>
-          </ol>
-        </section>
+                <div className="flex items-center justify-between">
+                  <span className="text-subtle px-1 text-[11px]">⌘ Enter to send</span>
+                  <Button type="submit" size="sm" loading={posting} disabled={!comment.trim()}>
+                    Comment
+                  </Button>
+                </div>
+              </form>
+            </section>
+
+            <section className="mt-8 pb-6">
+              <h3 className="text-subtle mb-3 text-xs font-medium tracking-wide uppercase">
+                Activity
+              </h3>
+              <ol className="border-border space-y-3 border-l pl-4">
+                {task.activity.map((a) => (
+                  <li key={a.id} className="text-muted relative text-[13px]">
+                    <span
+                      className="bg-border absolute top-1.5 -left-[21px] size-2 rounded-full"
+                      aria-hidden
+                    />
+                    <span className="text-fg font-medium">{a.actor?.name ?? "Taskora"}</span>{" "}
+                    {a.action === "automation_ran"
+                      ? `ran the “${String(a.meta.name ?? "automation")}” automation`
+                      : (ACTIVITY[a.action] ?? a.action.replace(/_/g, " "))}
+                    <span className="text-subtle"> · {ago(a.createdAt)}</span>
+                  </li>
+                ))}
+                <li className="text-subtle text-[13px]">
+                  Created {format(parseISO(task.createdAt), "MMM d, yyyy")}
+                  {task.creator ? ` by ${task.creator.name}` : ""}
+                </li>
+              </ol>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );
@@ -679,6 +714,21 @@ export function TaskPanel() {
     };
   }, [number, project.id, apply, allTasks]);
 
+  // Open instantly with what the board already knows; comments, subtasks and history fill in after.
+  const boardTask = allTasks.find((t) => t.number === number);
+  const placeholder: TaskDetail | null = boardTask
+    ? {
+        ...boardTask,
+        description: "",
+        creator: null,
+        parent: null,
+        children: [],
+        blockedBy: [],
+        commentList: [],
+        activity: [],
+      }
+    : null;
+
   const open = Boolean(openRef);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && openTask(null)}>
@@ -688,8 +738,11 @@ export function TaskPanel() {
           aria-describedby={undefined}
           className="bg-bg border-border shadow-pop md:rounded-dialog fixed inset-0 z-50 flex flex-col outline-none md:inset-y-2 md:right-2 md:left-auto md:w-[min(600px,calc(100vw-1rem))] md:border"
         >
-          {loading && !detail && <PanelSkeleton />}
-          {loading && !detail && (
+          {loading && !detail && placeholder && (
+            <PanelBody key={placeholder.id} detail={placeholder} reload={load} partial />
+          )}
+          {loading && !detail && !placeholder && <PanelSkeleton />}
+          {loading && !detail && !placeholder && (
             <DialogPrimitive.Title className="sr-only">Loading task</DialogPrimitive.Title>
           )}
           {error && (

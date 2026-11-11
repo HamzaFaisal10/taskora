@@ -191,7 +191,9 @@ export function FlowChart({ data }: { data: WeekPoint[] }) {
           </svg>
           {hover !== null && (
             <Tooltip pct={(cx(hover) / W) * 100}>
-              <p className="text-fg mb-1 font-medium">{hover === data.length - 1 ? "This week (so far)" : `Week of ${data[hover].label}`}</p>
+              <p className="text-fg mb-1 font-medium">
+                {hover === data.length - 1 ? "This week (so far)" : `Week of ${data[hover].label}`}
+              </p>
               <p className="text-muted flex justify-between gap-4">
                 <span>Completed</span>
                 <span className="text-fg tabular-nums">{data[hover].completed}</span>
