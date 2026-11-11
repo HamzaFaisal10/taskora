@@ -1,4 +1,3 @@
-
 export { PricingPlans } from "./pricing-plans";
 
 const FAQ = [

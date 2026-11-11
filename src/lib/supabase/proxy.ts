@@ -35,10 +35,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Validates the token with Supabase; do not run code between client creation and this call.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Checks the session token (and refreshes it when it has expired). getClaims verifies the token's
+  // signature locally with the project's published keys, so most requests skip a network round trip;
+  // pages still confirm the user with getUser before reading data. Don't run code between client
+  // creation and this call.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? { id: data.claims.sub } : null;
   const path = request.nextUrl.pathname;
 
   if (!user && !isPublic(path)) {
