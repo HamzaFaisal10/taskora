@@ -33,6 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
 import { AiAssist } from "./ai-assist";
+import { BlockersSection } from "./blockers";
 import { CommentBody, MentionInput, Reactions } from "./comments";
 import { AttachmentsSection } from "./attachments-section";
 import { TimeSection } from "./time-section";
@@ -471,33 +472,7 @@ function PanelBody({
           </div>
         ) : (
           <>
-            {task.blockedBy.length > 0 && (
-              <section className="mt-6">
-                <h3 className="text-subtle mb-2 text-xs font-medium tracking-wide uppercase">
-                  Blocked by
-                </h3>
-                <ul className="space-y-1">
-                  {task.blockedBy.map((b) => (
-                    <li key={b.id}>
-                      <button
-                        type="button"
-                        onClick={() => openTask(b.ref)}
-                        className="hover:bg-elevated rounded-control flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
-                      >
-                        <span
-                          className={cn("size-2 rounded-full", b.done ? "bg-success" : "bg-danger")}
-                          aria-label={b.done ? "Done" : "Open"}
-                        />
-                        <span className="text-subtle font-mono text-[11px]">{b.ref}</span>
-                        <span className={cn("truncate", b.done && "text-muted line-through")}>
-                          {b.title}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <BlockersSection task={task} reload={reload} />
 
             <section className="mt-6">
               <h3 className="text-subtle mb-2 flex items-center gap-2 text-xs font-medium tracking-wide uppercase">

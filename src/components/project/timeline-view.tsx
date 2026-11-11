@@ -25,6 +25,136 @@ const span = (t: BoardTask) => {
   return { start, end };
 };
 
+type DragMode = "move" | "start" | "end";
+
+/** A bar you can drag to move, or grab by either edge to change the start or due date. */
+function TimelineBar({
+  task,
+  left,
+  width,
+  dayW,
+  color,
+  done,
+  overdue,
+  label,
+}: {
+  task: BoardTask;
+  left: number;
+  width: number;
+  dayW: number;
+  color: string;
+  done: boolean;
+  overdue: boolean;
+  label: string;
+}) {
+  const { openTask, update, canEdit } = useProject();
+  const [drag, setDrag] = useState<{ mode: DragMode; x: number; dx: number } | null>(null);
+  const moved = useRef(false);
+  const days = drag ? Math.round(drag.dx / dayW) : 0;
+  const preview = {
+    left: left + (drag?.mode === "end" ? 0 : days * dayW),
+    width: Math.max(
+      dayW,
+      width + (drag?.mode === "start" ? -days * dayW : drag?.mode === "end" ? days * dayW : 0),
+    ),
+  };
+
+  const begin = (mode: DragMode) => (e: React.PointerEvent) => {
+    if (!canEdit || e.button !== 0) return;
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    moved.current = false;
+    setDrag({ mode, x: e.clientX, dx: 0 });
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 3) moved.current = true;
+    setDrag({ ...drag, dx });
+  };
+  const end = () => {
+    if (!drag) return;
+    const d = days;
+    const mode = drag.mode;
+    setDrag(null);
+    if (!d) return;
+    const shift = (iso: string | null) =>
+      iso ? format(addDays(parseISO(iso), d), "yyyy-MM-dd") : null;
+    const start = task.startDate ?? task.dueDate;
+    const due = task.dueDate ?? task.startDate;
+    if (mode === "move")
+      update(task.id, {
+        startDate: task.startDate ? shift(task.startDate) : null,
+        dueDate: task.dueDate ? shift(task.dueDate) : shift(task.startDate),
+      });
+    else if (mode === "start") {
+      const next = shift(start)!;
+      if (due && next > due) return;
+      update(task.id, { startDate: next });
+    } else {
+      const next = shift(due)!;
+      if (start && next < start) return;
+      update(task.id, { dueDate: next });
+    }
+  };
+  const nudge = (e: React.KeyboardEvent) => {
+    if (!canEdit || (e.key !== "ArrowLeft" && e.key !== "ArrowRight") || !e.altKey) return;
+    e.preventDefault();
+    const d = e.key === "ArrowLeft" ? -1 : 1;
+    const shift = (iso: string | null) =>
+      iso ? format(addDays(parseISO(iso), d), "yyyy-MM-dd") : null;
+    update(task.id, { startDate: shift(task.startDate), dueDate: shift(task.dueDate) });
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`${label}. Alt + arrow keys move it by a day.`}
+      title={label}
+      onClick={() => !moved.current && openTask(task.ref)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") openTask(task.ref);
+        nudge(e);
+      }}
+      onPointerDown={begin("move")}
+      onPointerMove={onMove}
+      onPointerUp={end}
+      onPointerCancel={() => setDrag(null)}
+      className={cn(
+        "group absolute top-2 flex h-6 touch-none items-center gap-1.5 overflow-hidden rounded-md px-1.5 text-[11.5px] font-medium text-[#0E0F11] select-none hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
+        canEdit && "cursor-grab",
+        drag && "shadow-pop z-20 cursor-grabbing",
+        done && "opacity-50",
+        overdue && "ring-danger ring-2",
+      )}
+      style={{ left: preview.left, width: preview.width, background: color }}
+    >
+      {canEdit && (
+        <span
+          onPointerDown={begin("start")}
+          className="absolute inset-y-0 left-0 w-2 cursor-ew-resize opacity-0 group-hover:bg-black/20 group-hover:opacity-100"
+          aria-hidden
+        />
+      )}
+      <PersonAvatar id={task.assigneeId} size={16} />
+      {preview.width > 90 && <span className="truncate">{task.title}</span>}
+      {drag && days !== 0 && (
+        <span className="ml-auto shrink-0 rounded bg-black/25 px-1 text-[10px] text-white tabular-nums">
+          {days > 0 ? `+${days}` : days}d
+        </span>
+      )}
+      {canEdit && (
+        <span
+          onPointerDown={begin("end")}
+          className="absolute inset-y-0 right-0 w-2 cursor-ew-resize opacity-0 group-hover:bg-black/20 group-hover:opacity-100"
+          aria-hidden
+        />
+      )}
+    </div>
+  );
+}
+
 export function TimelineView() {
   const { tasks, statusById, sprints, openTask } = useProject();
   const [zoom, setZoom] = useState<Zoom>("week");
@@ -206,20 +336,16 @@ export function TimelineView() {
                     className="border-border-subtle absolute inset-x-0 border-b"
                     style={{ top: i * ROW, height: ROW }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => openTask(t.ref)}
-                      title={`${t.ref} · ${t.title} (${format(s.start, "MMM d")} – ${format(s.end, "MMM d")})`}
-                      className={cn(
-                        "absolute top-2 flex h-6 items-center gap-1.5 overflow-hidden rounded-md px-1.5 text-[11.5px] font-medium text-[#0E0F11] hover:brightness-110",
-                        done && "opacity-50",
-                        overdue && "ring-danger ring-2",
-                      )}
-                      style={{ left, width: w, background: status?.color ?? "var(--accent)" }}
-                    >
-                      <PersonAvatar id={t.assigneeId} size={16} />
-                      {w > 90 && <span className="truncate">{t.title}</span>}
-                    </button>
+                    <TimelineBar
+                      task={t}
+                      left={left}
+                      width={w}
+                      dayW={dayW}
+                      color={status?.color ?? "var(--accent)"}
+                      done={done}
+                      overdue={Boolean(overdue)}
+                      label={`${t.ref} · ${t.title} (${format(s.start, "MMM d")} – ${format(s.end, "MMM d")})`}
+                    />
                   </div>
                 );
               })}

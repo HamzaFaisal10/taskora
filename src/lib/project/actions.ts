@@ -311,3 +311,40 @@ export async function createSubtasks(input: {
   if (error) return fail(message(error));
   return { ok: true, data: p.data.items.length };
 }
+
+export async function addDependency(input: {
+  taskId: string;
+  blockedById: string;
+}): Promise<Result> {
+  const p = z.object({ taskId: uuid, blockedById: uuid }).safeParse(input);
+  if (!p.success || p.data.taskId === p.data.blockedById) return fail("A task can't block itself.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("task_dependencies")
+    .insert({ task_id: p.data.taskId, blocked_by_id: p.data.blockedById });
+  if (error) {
+    if (error.code === "23505") return fail("That task already blocks this one.");
+    if (/block each other|loop|cycle/i.test(error.message))
+      return fail("Those tasks would wait on each other. Remove the other dependency first.");
+    if (/same workspace/i.test(error.message))
+      return fail("Blockers must be in the same workspace.");
+    return fail(message(error));
+  }
+  return { ok: true, data: null };
+}
+
+export async function removeDependency(input: {
+  taskId: string;
+  blockedById: string;
+}): Promise<Result> {
+  const p = z.object({ taskId: uuid, blockedById: uuid }).safeParse(input);
+  if (!p.success) return fail("Invalid dependency.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("task_dependencies")
+    .delete()
+    .eq("task_id", p.data.taskId)
+    .eq("blocked_by_id", p.data.blockedById);
+  if (error) return fail(message(error));
+  return { ok: true, data: null };
+}
