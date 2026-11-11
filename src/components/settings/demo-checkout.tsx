@@ -22,6 +22,7 @@ export function DemoCheckout({
   seats,
   email,
   workspaceName,
+  interval,
 }: {
   slug: string;
   plan: "pro" | "business";
@@ -30,6 +31,7 @@ export function DemoCheckout({
   seats: number;
   email: string;
   workspaceName: string;
+  interval: "month" | "year";
 }) {
   const router = useRouter();
   const [error, setError] = useState<string>();
@@ -72,12 +74,20 @@ export function DemoCheckout({
             <div className="flex justify-between gap-4">
               <dt className="text-muted">Seats</dt>
               <dd className="tabular-nums">
-                {seats} × {money(pricePerSeat * 100)}
+                {seats} × {money(pricePerSeat * 100)} / {interval}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted">Billing</dt>
-              <dd>Monthly</dd>
+              <dd>
+                {interval === "year" ? (
+                  <>
+                    Yearly <span className="text-success-text text-xs">· 2 months free</span>
+                  </>
+                ) : (
+                  "Monthly"
+                )}
+              </dd>
             </div>
             <div className="border-border flex justify-between gap-4 border-t pt-3 text-base font-semibold">
               <dt>Due today</dt>
@@ -105,7 +115,7 @@ export function DemoCheckout({
             loading={pending}
             onClick={() =>
               start(async () => {
-                const res = await confirmDemoPayment({ slug, plan });
+                const res = await confirmDemoPayment({ slug, plan, interval });
                 if (!res.ok) return setError(res.error);
                 router.push(`/w/${slug}/settings/billing?checkout=success`);
               })

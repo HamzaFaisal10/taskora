@@ -55,6 +55,7 @@ export async function POST(request: Request) {
               stripe_customer_id: obj.customer,
               stripe_subscription_id: obj.subscription,
               subscription_status: "active",
+              billing_interval: obj.metadata?.interval === "year" ? "year" : "month",
             })
             .eq("id", workspaceId);
         }

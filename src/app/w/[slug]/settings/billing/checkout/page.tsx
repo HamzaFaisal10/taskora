@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DemoCheckout } from "@/components/settings/demo-checkout";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, seatPrice } from "@/lib/billing/plans";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -11,7 +11,8 @@ export default async function CheckoutPage({
   params,
   searchParams,
 }: PageProps<"/w/[slug]/settings/billing/checkout">) {
-  const [{ slug }, { plan }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { plan, interval: rawInterval }] = await Promise.all([params, searchParams]);
+  const interval = rawInterval === "year" ? "year" : "month";
   if (plan !== "pro" && plan !== "business") notFound();
   const { workspace, viewer } = await getWorkspaceContext(slug);
   const supabase = await createClient();
@@ -26,7 +27,8 @@ export default async function CheckoutPage({
       slug={slug}
       plan={plan}
       planName={PLANS[plan].name}
-      pricePerSeat={PLANS[plan].pricePerSeat}
+      pricePerSeat={seatPrice(plan, interval)}
+      interval={interval}
       seats={seats}
       email={viewer.email}
       workspaceName={workspace.name}

@@ -9,7 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, Progress } from "@/components/ui/surface";
 import { cancelToFree, openBillingPortal, startCheckout } from "@/lib/billing/actions";
-import { money, PLANS, type PlanId } from "@/lib/billing/plans";
+import { IntervalToggle } from "@/components/billing/interval-toggle";
+import {
+  monthlyEquivalentCents,
+  money,
+  PLANS,
+  seatPrice,
+  type BillingInterval,
+  type PlanId,
+} from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 import { SettingsSection } from "./section";
 
@@ -60,6 +68,7 @@ export function BillingView({
   usage,
   invoices,
   checkout,
+  interval = "month",
 }: {
   slug: string;
   plan: PlanId;
@@ -71,12 +80,14 @@ export function BillingView({
   usage: { projects: number; members: number; aiCredits: number };
   invoices: Invoice[];
   checkout?: string;
+  interval?: BillingInterval;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [busyPlan, setBusyPlan] = useState<PlanId | null>(null);
   const announced = useRef(false);
   const current = PLANS[plan];
+  const [period, setPeriod] = useState<BillingInterval>(interval);
 
   useEffect(() => {
     if (announced.current || !checkout) return;
@@ -97,7 +108,7 @@ export function BillingView({
         else toast.success("Switched to Free");
         return;
       }
-      const res = await startCheckout({ slug, plan: id });
+      const res = await startCheckout({ slug, plan: id, interval: period });
       setBusyPlan(null);
       if (!res.ok) return void toast.error(res.error);
       window.location.href = res.data.url;
@@ -146,7 +157,7 @@ export function BillingView({
             <p className="text-muted mt-1 text-sm">
               {plan === "free"
                 ? "Free forever for small teams."
-                : `${money(current.pricePerSeat * 100 * usage.members)} a month · ${usage.members} seats × ${money(current.pricePerSeat * 100)}`}
+                : `${money(seatPrice(plan, interval) * 100 * usage.members)} a ${interval} · ${usage.members} seats × ${money(seatPrice(plan, interval) * 100)}${interval === "year" ? " (billed yearly)" : ""}`}
             </p>
             {periodEnd && plan !== "free" && (
               <p className="text-subtle mt-1 text-xs">
@@ -167,13 +178,17 @@ export function BillingView({
       </section>
 
       <section aria-labelledby="plans">
-        <h2 id="plans" className="mb-3 text-[13px] font-semibold">
-          Plans
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="plans" className="text-[13px] font-semibold">
+            Plans
+          </h2>
+          <IntervalToggle value={period} onChange={setPeriod} />
+        </div>
         <div className="grid gap-3 md:grid-cols-3">
           {(Object.keys(PLANS) as PlanId[]).map((id) => {
             const p = PLANS[id];
-            const isCurrent = id === plan;
+            const isCurrent = id === plan && (id === "free" || period === interval);
+            const samePlan = id === plan;
             const order = { free: 0, pro: 1, business: 2 };
             return (
               <Card
@@ -191,13 +206,18 @@ export function BillingView({
                 </div>
                 <p className="mt-2">
                   <span className="text-2xl font-semibold tabular-nums">
-                    {money(p.pricePerSeat * 100)}
+                    {money(monthlyEquivalentCents(id, period))}
                   </span>
                   <span className="text-muted text-sm">
                     {" "}
                     {p.pricePerSeat ? "per member / month" : "forever"}
                   </span>
                 </p>
+                {p.pricePerSeat > 0 && period === "year" && (
+                  <p className="text-subtle text-xs">
+                    {money(seatPrice(id, "year") * 100)} per member, billed yearly
+                  </p>
+                )}
                 <p className="text-muted mt-1 text-[13px]">{p.tagline}</p>
                 <ul className="mt-4 flex-1 space-y-1.5 text-[13px]">
                   {p.features.map((f) => (
@@ -210,12 +230,16 @@ export function BillingView({
                 {canEdit && !isCurrent && (
                   <Button
                     className="mt-5"
-                    variant={order[id] > order[plan] ? "primary" : "secondary"}
+                    variant={order[id] > order[plan] || samePlan ? "primary" : "secondary"}
                     loading={busyPlan === id}
                     disabled={pending}
                     onClick={() => choose(id)}
                   >
-                    {order[id] > order[plan] ? `Upgrade to ${p.name}` : `Switch to ${p.name}`}
+                    {samePlan
+                      ? `Switch to ${period === "year" ? "yearly" : "monthly"} billing`
+                      : order[id] > order[plan]
+                        ? `Upgrade to ${p.name}`
+                        : `Switch to ${p.name}`}
                   </Button>
                 )}
               </Card>

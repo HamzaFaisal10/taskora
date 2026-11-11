@@ -13,6 +13,7 @@ import {
 import {
   addDays,
   addMonths,
+  addWeeks,
   endOfMonth,
   endOfWeek,
   format,
@@ -35,7 +36,7 @@ import { isDoneCategory, useProject } from "./store";
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function Chip({ task }: { task: BoardTask }) {
+function Chip({ task, week = false }: { task: BoardTask; week?: boolean }) {
   const { openTask, statusById, canEdit } = useProject();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
@@ -56,23 +57,42 @@ function Chip({ task }: { task: BoardTask }) {
           : undefined
       }
       className={cn(
-        "bg-card border-border hover:border-fg/20 flex w-full touch-manipulation items-center gap-1.5 rounded-md border px-1.5 py-1 text-left text-xs",
+        "bg-card border-border hover:border-fg/20 flex w-full touch-manipulation gap-1.5 rounded-md border px-1.5 py-1 text-left text-xs",
+        week ? "items-start py-1.5" : "items-center",
         isDragging && "shadow-pop",
         done && "text-muted line-through",
       )}
       title={`${task.ref} · ${task.title}`}
     >
-      {status && <StatusDot color={status.color} group={statusGroup(status.category)} size={8} />}
-      <span className="min-w-0 flex-1 truncate">{task.title}</span>
+      {status && (
+        <span className={cn(week && "mt-[3px]")}>
+          <StatusDot color={status.color} group={statusGroup(status.category)} size={8} />
+        </span>
+      )}
+      <span className={cn("min-w-0 flex-1", week ? "line-clamp-2 leading-snug" : "truncate")}>
+        {task.title}
+      </span>
+      {week && task.assigneeId && <PersonAvatar id={task.assigneeId} size={16} />}
     </button>
   );
 }
 
-function Day({ day, month, tasks }: { day: Date; month: Date; tasks: BoardTask[] }) {
+function Day({
+  day,
+  month,
+  tasks,
+  week = false,
+}: {
+  day: Date;
+  month: Date;
+  tasks: BoardTask[];
+  week?: boolean;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: iso(day) });
   const { create, openTask, canEdit } = useProject();
   const [showAll, setShowAll] = useState(false);
-  const shown = showAll ? tasks : tasks.slice(0, 3);
+  const shown = showAll || week ? tasks : tasks.slice(0, 3);
+  const outside = !week && !isSameMonth(day, month);
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const quickAdd = async (e: React.FormEvent) => {
@@ -87,20 +107,24 @@ function Day({ day, month, tasks }: { day: Date; month: Date; tasks: BoardTask[]
     <div
       ref={setNodeRef}
       className={cn(
-        "group border-border-subtle min-h-28 border-r border-b p-1.5 [&:nth-child(7n)]:border-r-0",
-        !isSameMonth(day, month) && "bg-surface/50",
+        "group border-border-subtle border-r border-b p-1.5 [&:nth-child(7n)]:border-r-0",
+        week ? "min-h-[28rem]" : "min-h-28",
+        outside && "bg-surface/50",
         isOver && "bg-accent-soft/50",
       )}
     >
       <div className="mb-1 flex items-center justify-between">
-        <span
-          className={cn(
-            "flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
-            !isSameMonth(day, month) ? "text-subtle" : "text-muted",
-            isToday(day) && "bg-accent text-accent-fg font-semibold",
-          )}
-        >
-          {format(day, "d")}
+        <span className="flex items-center gap-1.5">
+          {week && <span className="text-subtle text-xs">{format(day, "EEE")}</span>}
+          <span
+            className={cn(
+              "flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
+              outside ? "text-subtle" : "text-muted",
+              isToday(day) && "bg-accent text-accent-fg font-semibold",
+            )}
+          >
+            {format(day, "d")}
+          </span>
         </span>
         {canEdit && (
           <Popover open={adding} onOpenChange={setAdding}>
@@ -134,9 +158,12 @@ function Day({ day, month, tasks }: { day: Date; month: Date; tasks: BoardTask[]
       </div>
       <div className="space-y-1">
         {shown.map((t) => (
-          <Chip key={t.id} task={t} />
+          <Chip key={t.id} task={t} week={week} />
         ))}
-        {tasks.length > 3 && !showAll && (
+        {week && tasks.length === 0 && (
+          <p className="text-subtle px-1.5 pt-2 text-[11px]">Nothing due</p>
+        )}
+        {!week && tasks.length > 3 && !showAll && (
           <button
             type="button"
             onClick={() => setShowAll(true)}
@@ -188,16 +215,37 @@ function Agenda({ days, byDay }: { days: Date[]; byDay: Map<string, BoardTask[]>
   );
 }
 
+type Mode = "month" | "week";
+
 export function CalendarView() {
   const { tasks, update } = useProject();
-  const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const [mode, setMode] = useState<Mode>("month");
+  // The day the view is anchored on: any day in the shown month or week.
+  const [cursor, setCursor] = useState(() => new Date());
+  const month = startOfMonth(cursor);
   const days = useMemo(() => {
-    const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-    const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+    const start =
+      mode === "week"
+        ? startOfWeek(cursor, { weekStartsOn: 1 })
+        : startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
+    const end =
+      mode === "week"
+        ? endOfWeek(cursor, { weekStartsOn: 1 })
+        : endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
     const out: Date[] = [];
     for (let d = start; d <= end; d = addDays(d, 1)) out.push(d);
     return out;
-  }, [month]);
+  }, [cursor, mode]);
+  const step = (n: number) =>
+    setCursor((c) => (mode === "week" ? addWeeks(c, n) : addMonths(startOfMonth(c), n)));
+  const weekStart = days[0];
+  const weekEnd = days[days.length - 1];
+  const title =
+    mode === "month"
+      ? format(month, "MMMM yyyy")
+      : isSameMonth(weekStart, weekEnd)
+        ? `${format(weekStart, "MMM d")} – ${format(weekEnd, "d, yyyy")}`
+        : `${format(weekStart, "MMM d")} – ${format(weekEnd, "MMM d, yyyy")}`;
   const byDay = useMemo(() => {
     const m = new Map<string, BoardTask[]>();
     for (const t of tasks) {
@@ -227,40 +275,71 @@ export function CalendarView() {
   return (
     <div className="pb-10">
       <div className="flex items-center gap-2 px-4 py-3 sm:px-8">
-        <h2 className="min-w-36 text-base font-semibold">{format(month, "MMMM yyyy")}</h2>
+        <h2 className="min-w-36 text-base font-semibold tabular-nums" aria-live="polite">
+          {title}
+        </h2>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Previous month"
-          onClick={() => setMonth((m) => addMonths(m, -1))}
+          aria-label={mode === "week" ? "Previous week" : "Previous month"}
+          onClick={() => step(-1)}
         >
           <ChevronLeft />
         </Button>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Next month"
-          onClick={() => setMonth((m) => addMonths(m, 1))}
+          aria-label={mode === "week" ? "Next week" : "Next month"}
+          onClick={() => step(1)}
         >
           <ChevronRight />
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setMonth(startOfMonth(new Date()))}>
+        <Button variant="secondary" size="sm" onClick={() => setCursor(new Date())}>
           Today
         </Button>
+        <div
+          role="radiogroup"
+          aria-label="Calendar range"
+          className="border-border bg-surface ml-auto flex rounded-[9px] border p-0.5"
+        >
+          {(["month", "week"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={mode === m}
+              onClick={() => setMode(m)}
+              className={cn(
+                "text-muted hover:text-fg rounded-[7px] px-2.5 py-1 text-[13px] font-medium capitalize",
+                mode === m && "bg-elevated text-fg shadow-sm",
+              )}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
         {unscheduled > 0 && (
-          <span className="text-subtle ml-auto text-xs">
+          <span className="text-subtle hidden text-xs lg:inline">
             {unscheduled} tasks without a due date
           </span>
         )}
       </div>
 
       <div className="md:hidden">
-        <Agenda days={days.filter((d) => isSameMonth(d, month))} byDay={byDay} />
+        <Agenda
+          days={mode === "week" ? days : days.filter((d) => isSameMonth(d, month))}
+          byDay={byDay}
+        />
       </div>
 
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <div className="border-border rounded-card mx-4 hidden overflow-hidden border sm:mx-8 md:block">
-          <div className="bg-surface border-border grid grid-cols-7 border-b">
+          <div
+            className={cn(
+              "bg-surface border-border grid grid-cols-7 border-b",
+              mode === "week" && "hidden",
+            )}
+          >
             {WEEKDAYS.map((d) => (
               <div key={d} className="text-subtle px-2 py-2 text-xs font-medium">
                 {d}
@@ -269,7 +348,13 @@ export function CalendarView() {
           </div>
           <div className="grid grid-cols-7">
             {days.map((d) => (
-              <Day key={iso(d)} day={d} month={month} tasks={byDay.get(iso(d)) ?? []} />
+              <Day
+                key={iso(d)}
+                day={d}
+                month={month}
+                week={mode === "week"}
+                tasks={byDay.get(iso(d)) ?? []}
+              />
             ))}
           </div>
         </div>

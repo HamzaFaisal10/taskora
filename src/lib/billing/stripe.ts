@@ -44,6 +44,7 @@ export function createCheckoutSession(input: {
   email: string;
   successUrl: string;
   cancelUrl: string;
+  interval: "month" | "year";
 }) {
   return stripe<{ id: string; url: string }>("checkout/sessions", {
     mode: "subscription",
@@ -59,7 +60,9 @@ export function createCheckoutSession(input: {
     "line_items[0][quantity]": input.seats,
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][unit_amount]": input.unitAmountCents,
-    "line_items[0][price_data][recurring][interval]": "month",
+    "line_items[0][price_data][recurring][interval]": input.interval,
+    "metadata[interval]": input.interval,
+    "subscription_data[metadata][interval]": input.interval,
     "line_items[0][price_data][product_data][name]": `Taskora ${input.planName}`,
   });
 }

@@ -56,3 +56,18 @@ export const money = (cents: number, currency = "usd") =>
     currency: currency.toUpperCase(),
     minimumFractionDigits: cents % 100 ? 2 : 0,
   }).format(cents / 100);
+
+export type BillingInterval = "month" | "year";
+/** Paying yearly costs ten months: two months free. */
+export const YEARLY_MONTHS = 10;
+
+/** Price of one seat for a whole billing period, in dollars. */
+export function seatPrice(plan: PlanId, interval: BillingInterval) {
+  const monthly = PLANS[plan].pricePerSeat;
+  return interval === "year" ? monthly * YEARLY_MONTHS : monthly;
+}
+
+/** What one seat works out to per month, in cents (yearly prices are shown this way). */
+export function monthlyEquivalentCents(plan: PlanId, interval: BillingInterval) {
+  return Math.round((seatPrice(plan, interval) * 100) / (interval === "year" ? 12 : 1));
+}

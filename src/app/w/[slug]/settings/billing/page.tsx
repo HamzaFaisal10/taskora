@@ -16,7 +16,9 @@ export default async function BillingSettings({
   const [ws, members, invoices] = await Promise.all([
     supabase
       .from("workspaces")
-      .select("subscription_status, current_period_end, ai_credits_used, stripe_customer_id")
+      .select(
+        "subscription_status, current_period_end, ai_credits_used, stripe_customer_id, billing_interval",
+      )
       .eq("id", workspace.id)
       .single(),
     supabase
@@ -42,6 +44,7 @@ export default async function BillingSettings({
       hasCustomer={Boolean(ws.data?.stripe_customer_id)}
       status={ws.data?.subscription_status ?? null}
       periodEnd={ws.data?.current_period_end ?? null}
+      interval={ws.data?.billing_interval === "year" ? "year" : "month"}
       usage={{
         projects: projects.length,
         members: members.count ?? 1,
