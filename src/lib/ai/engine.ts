@@ -1,4 +1,5 @@
 import "server-only";
+import { richTextToPlain } from "@/lib/rich-text";
 import { format, parseISO } from "date-fns";
 
 /**
@@ -53,7 +54,7 @@ const SYSTEM =
 const describe = (t: TaskContext) =>
   JSON.stringify({
     title: t.title,
-    description: t.description,
+    description: richTextToPlain(t.description),
     labels: t.labels,
     status: t.status,
     assignee: t.assignee,

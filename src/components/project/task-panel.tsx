@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
 import { useLive } from "@/lib/realtime/use-live";
 import { AiAssist } from "./ai-assist";
+import { DescriptionEditor } from "./rich-text";
 import { FieldValueEditor, fieldIcon, RepeatField } from "./custom-fields";
 import { BlockersSection } from "./blockers";
 import { CommentBody, MentionInput, Reactions } from "./comments";
@@ -214,9 +215,13 @@ function PanelBody({
   } = store;
   const [local, setTask] = useState(detail);
   const [prevDetail, setPrevDetail] = useState(detail);
+  // A description being saved wins over a reload that raced ahead of the save.
+  const [pendingDescription, setPendingDescription] = useState<string | null>(null);
   if (detail !== prevDetail) {
     setPrevDetail(detail);
-    setTask(detail);
+    const keepPending = pendingDescription !== null && detail.description !== pendingDescription;
+    if (!keepPending) setPendingDescription(null);
+    setTask(keepPending ? { ...detail, description: pendingDescription } : detail);
   }
   // Board-level fields update optimistically in the store; prefer them so pickers feel instant.
   const live = store.allTasks.find((t) => t.id === local.id);
@@ -245,6 +250,7 @@ function PanelBody({
   const todoStatus = statuses.find((s) => s.category === "unstarted") ?? statuses[0];
 
   const patch = (p: Parameters<typeof update>[1]) => {
+    if (p.description !== undefined) setPendingDescription(p.description);
     setTask((t) => ({ ...t, ...p }));
     update(task.id, p);
   };
@@ -484,13 +490,11 @@ function PanelBody({
               <Skeleton className="h-3.5 w-4/5" />
             </div>
           ) : (
-            <AutoTextarea
+            <DescriptionEditor
               value={task.description}
               disabled={!canEdit}
-              ariaLabel="Description"
               placeholder="Add more detail, acceptance criteria or links…"
               onCommit={(v) => patch({ description: v })}
-              className="text-fg-2 hover:bg-surface focus:bg-surface rounded-control -mx-2 min-h-20 px-2 py-1.5 text-sm leading-relaxed"
             />
           )}
         </section>
@@ -763,6 +767,11 @@ export function TaskPanel() {
         <DialogPrimitive.Overlay className="bg-overlay fixed inset-0 z-40 md:bg-transparent" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
+          // Escape inside an open editor cancels the edit instead of closing the panel.
+          onEscapeKeyDown={(e) => {
+            if ((e.target as HTMLElement | null)?.closest?.("[data-escape-local]"))
+              e.preventDefault();
+          }}
           className="bg-bg border-border shadow-pop md:rounded-dialog fixed inset-0 z-50 flex flex-col outline-none md:inset-y-2 md:right-2 md:left-auto md:w-[min(600px,calc(100vw-1rem))] md:border"
         >
           {loading && !detail && placeholder && (
