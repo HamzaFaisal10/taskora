@@ -467,6 +467,11 @@ async function main() {
           "select id from public.tasks where project_id = $1 limit 1",
           [MOB],
         );
+        // The first timer starts fine; a second one while it runs is refused.
+        await q("insert into public.time_entries (task_id, user_id) values ($1, $2)", [
+          task.id,
+          owner,
+        ]);
         await q("insert into public.time_entries (task_id, user_id) values ($1, $2)", [
           task.id,
           owner,
