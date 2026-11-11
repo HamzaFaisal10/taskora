@@ -76,6 +76,7 @@ export type TaskDetail = BoardTask & {
     createdAt: string;
     editedAt: string | null;
     author: Person | null;
+    reactions: { emoji: string; userIds: string[] }[];
   }[];
   attachments: {
     id: string;

@@ -192,10 +192,77 @@ export async function addComment(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) return fail("Sign in first.");
   const { error } = await supabase
     .from("comments")
-    .insert({ task_id: p.data.taskId, body: p.data.body, author_id: user?.id });
+    .insert({ task_id: p.data.taskId, body: p.data.body, author_id: user.id });
   if (error) return fail(message(error));
+
+  // @mentions: "@Full Name" for any workspace member notifies them (never yourself).
+  if (p.data.body.includes("@")) {
+    const { data: task } = await supabase
+      .from("tasks")
+      .select("workspace_id, number, projects!inner(key)")
+      .eq("id", p.data.taskId)
+      .single();
+    if (task) {
+      const t = task as unknown as {
+        workspace_id: string;
+        number: number;
+        projects: { key: string };
+      };
+      const { data: members } = await supabase
+        .from("workspace_members")
+        .select("user_id, profiles!inner(full_name)")
+        .eq("workspace_id", t.workspace_id);
+      type M = { user_id: string; profiles: { full_name: string } };
+      const mentioned = ((members ?? []) as unknown as M[]).filter(
+        (m) =>
+          m.user_id !== user.id &&
+          m.profiles.full_name &&
+          p.data.body.toLowerCase().includes(`@${m.profiles.full_name.toLowerCase()}`),
+      );
+      if (mentioned.length) {
+        await supabase.from("notifications").insert(
+          mentioned.map((m) => ({
+            user_id: m.user_id,
+            workspace_id: t.workspace_id,
+            kind: "mentioned",
+            task_id: p.data.taskId,
+            actor_id: user.id,
+            title: `mentioned you on ${t.projects.key}-${t.number}`,
+            body: p.data.body.slice(0, 280),
+          })),
+        );
+      }
+    }
+  }
+  return { ok: true, data: null };
+}
+
+const EMOJI = ["👍", "🎉", "❤️", "👀", "✅", "🚀"] as const;
+
+/** Adds or removes your reaction on a comment. */
+export async function toggleReaction(input: { commentId: string; emoji: string }): Promise<Result> {
+  const p = z.object({ commentId: uuid, emoji: z.enum(EMOJI) }).safeParse(input);
+  if (!p.success) return fail("Invalid reaction.");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return fail("Sign in first.");
+  const { count } = await supabase
+    .from("comment_reactions")
+    .delete({ count: "exact" })
+    .eq("comment_id", p.data.commentId)
+    .eq("user_id", user.id)
+    .eq("emoji", p.data.emoji);
+  if (!count) {
+    const { error } = await supabase
+      .from("comment_reactions")
+      .insert({ comment_id: p.data.commentId, user_id: user.id, emoji: p.data.emoji });
+    if (error) return fail(message(error));
+  }
   return { ok: true, data: null };
 }
 

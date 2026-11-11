@@ -33,6 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
 import { AiAssist } from "./ai-assist";
+import { CommentBody, MentionInput, Reactions } from "./comments";
 import { AttachmentsSection } from "./attachments-section";
 import { TimeSection } from "./time-section";
 import type { TaskDetail } from "@/lib/project/types";
@@ -590,9 +591,13 @@ function PanelBody({
                           {ago(c.createdAt)}
                         </time>
                       </p>
-                      <p className="text-fg-2 mt-0.5 text-sm leading-relaxed whitespace-pre-wrap">
-                        {c.body}
-                      </p>
+                      <CommentBody body={c.body} people={people} />
+                      <Reactions
+                        commentId={c.id}
+                        reactions={c.reactions}
+                        people={people}
+                        onChange={reload}
+                      />
                     </div>
                   </li>
                 ))}
@@ -604,17 +609,11 @@ function PanelBody({
                   if (comment.trim()) postComment();
                 }}
               >
-                <textarea
+                <MentionInput
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && comment.trim())
-                      postComment();
-                  }}
-                  rows={2}
-                  placeholder="Write a comment…"
-                  aria-label="Write a comment"
-                  className="placeholder:text-subtle w-full resize-none bg-transparent px-1 text-sm outline-none"
+                  onChange={setComment}
+                  onSubmit={postComment}
+                  people={people}
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-subtle px-1 text-[11px]">⌘ Enter to send</span>

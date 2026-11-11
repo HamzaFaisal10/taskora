@@ -60,7 +60,7 @@ export async function loadTaskDetail(
     supabase
       .from("comments")
       .select(
-        "id, body, created_at, edited_at, author:profiles!comments_author_id_fkey(id, full_name, avatar_url)",
+        "id, body, created_at, edited_at, author:profiles!comments_author_id_fkey(id, full_name, avatar_url), comment_reactions(emoji, user_id)",
       )
       .eq("task_id", row.id)
       .order("created_at"),
@@ -129,6 +129,7 @@ export async function loadTaskDetail(
     created_at: string;
     edited_at: string | null;
     author: PersonRow;
+    comment_reactions: { emoji: string; user_id: string }[];
   };
   type A = {
     id: string;
@@ -204,6 +205,12 @@ export async function loadTaskDetail(
         createdAt: c.created_at,
         editedAt: c.edited_at,
         author: person(c.author),
+        reactions: Object.entries(
+          (c.comment_reactions ?? []).reduce<Record<string, string[]>>((acc, r) => {
+            (acc[r.emoji] ??= []).push(r.user_id);
+            return acc;
+          }, {}),
+        ).map(([emoji, userIds]) => ({ emoji, userIds })),
       })),
       activity: ((activity.data ?? []) as unknown as A[]).map((a) => ({
         id: a.id,
