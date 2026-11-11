@@ -25,18 +25,29 @@ export function useLive(key: string, watches: Watch[], onChange: () => void, del
       clearTimeout(timer);
       timer = setTimeout(() => callback.current(), delay);
     };
-    let channel = supabase.channel(`live:${key}`);
-    for (const w of list) {
-      channel = channel.on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: w.table, filter: w.filter },
-        fire,
-      );
-    }
-    channel.subscribe();
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+    // Realtime checks row level security with the token it holds, so hand it the signed-in token before
+    // subscribing; otherwise the channel joins as anonymous and every row is filtered out.
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (data.session) await supabase.realtime.setAuth(data.session.access_token);
+      if (cancelled) return;
+      const ch = supabase.channel(`live:${key}`);
+      for (const w of list) {
+        ch.on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: w.table, filter: w.filter },
+          fire,
+        );
+      }
+      channel = ch.subscribe();
+    })();
     return () => {
+      cancelled = true;
       clearTimeout(timer);
-      supabase.removeChannel(channel);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [key, signature, delay]);
 }
