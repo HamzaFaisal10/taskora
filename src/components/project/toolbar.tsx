@@ -22,6 +22,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ProjectDialog } from "@/components/shell/new-project";
+import { ColumnsDialog } from "./columns-dialog";
 import { useWorkspace } from "@/components/shell/workspace-provider";
 import { archiveProject, setFavorite } from "@/lib/project/project-actions";
 import { Avatar } from "@/components/ui/avatar";
@@ -203,6 +204,7 @@ function ProjectMenu() {
   const { workspace, projects } = useWorkspace();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [columns, setColumns] = useState(false);
   const [pending, start] = useTransition();
   const favorite = projects.find((p) => p.id === project.id)?.favorite ?? false;
   return (
@@ -235,6 +237,11 @@ function ProjectMenu() {
             </DropdownMenuItem>
           )}
           {canEdit && (
+            <DropdownMenuItem onSelect={() => setColumns(true)}>
+              <Columns3 /> Edit board columns
+            </DropdownMenuItem>
+          )}
+          {canEdit && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -258,6 +265,7 @@ function ProjectMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
       {editing && <ProjectDialog open={editing} onOpenChange={setEditing} project={project} />}
+      {columns && <ColumnsDialog open={columns} onOpenChange={setColumns} />}
     </>
   );
 }
