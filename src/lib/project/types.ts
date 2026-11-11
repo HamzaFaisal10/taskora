@@ -77,6 +77,15 @@ export type TaskDetail = BoardTask & {
     editedAt: string | null;
     author: Person | null;
   }[];
+  attachments: {
+    id: string;
+    fileName: string;
+    path: string;
+    sizeBytes: number;
+    mimeType: string;
+    createdAt: string;
+    uploader: Person | null;
+  }[];
   time: {
     id: string;
     user: Person | null;

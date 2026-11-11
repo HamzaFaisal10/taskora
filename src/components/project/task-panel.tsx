@@ -33,6 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
 import { AiAssist } from "./ai-assist";
+import { AttachmentsSection } from "./attachments-section";
 import { TimeSection } from "./time-section";
 import type { TaskDetail } from "@/lib/project/types";
 import { cn } from "@/lib/utils";
@@ -565,6 +566,8 @@ function PanelBody({
               )}
             </section>
 
+            <AttachmentsSection task={task} reload={reload} />
+
             <TimeSection task={task} reload={reload} />
 
             <section className="border-border mt-8 border-t pt-5">
@@ -730,6 +733,7 @@ export function TaskPanel() {
         commentList: [],
         activity: [],
         time: [],
+        attachments: [],
       }
     : null;
 

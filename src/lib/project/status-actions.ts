@@ -43,14 +43,12 @@ export async function saveStatus(input: {
   const row = { name: p.data.name, color: p.data.color, category: p.data.category };
   const { error } = p.data.id
     ? await supabase.from("task_statuses").update(row).eq("id", p.data.id)
-    : await supabase
-        .from("task_statuses")
-        .insert({
-          ...row,
-          id: p.data.newId,
-          project_id: p.data.projectId,
-          position: p.data.position ?? 99,
-        });
+    : await supabase.from("task_statuses").insert({
+        ...row,
+        id: p.data.newId,
+        project_id: p.data.projectId,
+        position: p.data.position ?? 99,
+      });
   if (error) return { ok: false, error: denied };
   revalidatePath(input.path, "layout");
   return { ok: true };

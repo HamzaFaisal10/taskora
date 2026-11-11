@@ -41,7 +41,7 @@ export async function loadTaskDetail(
   const row = t as unknown as Row;
   const key = row.projects.key;
 
-  const [parent, children, deps, comments, activity, time] = await Promise.all([
+  const [parent, children, deps, comments, activity, time, files] = await Promise.all([
     row.parent_id
       ? supabase.from("tasks").select("id, number, title").eq("id", row.parent_id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -80,7 +80,23 @@ export async function loadTaskDetail(
       .eq("task_id", row.id)
       .order("started_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("attachments")
+      .select(
+        "id, file_name, storage_path, size_bytes, mime_type, created_at, uploader:profiles!attachments_uploaded_by_fkey(id, full_name, avatar_url)",
+      )
+      .eq("task_id", row.id)
+      .order("created_at"),
   ]);
+  type F = {
+    id: string;
+    file_name: string;
+    storage_path: string;
+    size_bytes: number;
+    mime_type: string;
+    created_at: string;
+    uploader: PersonRow;
+  };
   type T = {
     id: string;
     started_at: string;
@@ -165,6 +181,15 @@ export async function loadTaskDetail(
           title: d.blocker!.title,
           done: !!d.blocker!.completed_at,
         })),
+      attachments: ((files.data ?? []) as unknown as F[]).map((f) => ({
+        id: f.id,
+        fileName: f.file_name,
+        path: f.storage_path,
+        sizeBytes: Number(f.size_bytes),
+        mimeType: f.mime_type,
+        createdAt: f.created_at,
+        uploader: person(f.uploader),
+      })),
       time: ((time.data ?? []) as unknown as T[]).map((e) => ({
         id: e.id,
         user: person(e.user),
