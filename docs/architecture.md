@@ -203,6 +203,16 @@ Supabase project never pauses for inactivity.
 - **Projects and columns** are created and edited in the app: new projects start from a template, and
   `delete_status` moves a column's tasks before removing it.
 
+- **Rich text** in descriptions and updates is a small Markdown subset (`src/lib/rich-text.ts`) parsed into
+  plain data and rendered as React elements, so typed text can never become HTML. Only http(s) links are
+  allowed.
+- **Plan with AI** (`src/lib/ai/plan.ts`) turns a brief into tasks; demo mode uses rules (requirements,
+  bullets, "nice to have" sections, priority and size words, existing labels). Nothing is saved until the
+  person reviews the list.
+- **Status updates** (`src/lib/ai/status-update.ts`) are drafted from the project's numbers: work finished
+  this week, sprint pace, overdue and blocked tasks, and what is due next. Posting one also sets the
+  project's health on the home page.
+
 ## 12. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:

@@ -18,6 +18,7 @@ import {
   X,
   SlidersHorizontal,
   Sparkles,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -59,6 +60,7 @@ const VIEWS = [
   { slug: "calendar", label: "Calendar", icon: CalendarDays },
   { slug: "timeline", label: "Timeline", icon: GanttChart },
   { slug: "sprints", label: "Sprints", icon: Rocket },
+  { slug: "updates", label: "Updates", icon: Megaphone },
   { slug: "automations", label: "Automations", icon: Workflow },
   { slug: "forms", label: "Forms", icon: FileText },
 ];

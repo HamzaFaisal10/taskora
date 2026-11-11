@@ -1,6 +1,13 @@
 import "server-only";
 import { richTextToPlain } from "@/lib/rich-text";
 import { demoPlan, type PlanIdea } from "./plan";
+import {
+  draftUpdate,
+  HEALTH_LABEL,
+  projectFacts,
+  type Health,
+  type Snapshot,
+} from "./status-update";
 import { format, parseISO } from "date-fns";
 
 /**
@@ -235,5 +242,37 @@ export async function planFromBrief(
       estimate: [1, 2, 3, 5, 8].includes(t.estimate) ? t.estimate : 2,
       labels: (Array.isArray(t.labels) ? t.labels : []).filter((l) => allowed.has(l)),
     })),
+  };
+}
+
+/** Drafts a project status update. Demo mode writes it from the facts with fixed sentences. */
+export async function writeStatusUpdate(
+  snapshot: Snapshot,
+): Promise<{ mode: AiMode; health: Health; body: string }> {
+  const draft = draftUpdate(snapshot);
+  if (aiMode() === "demo") return { mode: "demo", ...draft };
+  const f = projectFacts(snapshot);
+  const brief = (t: { ref: string; title: string; dueDate: string | null }) => ({
+    ref: t.ref,
+    title: t.title,
+    due: t.dueDate,
+  });
+  const out = await openai<{ body: string }>(
+    SYSTEM,
+    `Write a short weekly status update for this project, for stakeholders. Use these Markdown paragraphs, each starting with a bold label: "**${HEALTH_LABEL[draft.health]}.**" followed by what was finished, "**${f.sprint?.name ?? "Sprint"}:**" (only if there is a sprint), "**Risks:**" and "**Next up:**". Mention task refs like MOB-12. Under 120 words. Only use these facts: ${JSON.stringify(
+      {
+        health: draft.health,
+        finished: f.finished.slice(0, 5).map(brief),
+        overdue: f.overdue.slice(0, 5).map(brief),
+        blocked: f.blocked.slice(0, 5).map((t) => ({ ...brief(t), waitingOn: t.openBlockers })),
+        next: f.next.slice(0, 5).map(brief),
+        sprint: f.sprint,
+      },
+    )}. Return {"body": "..."}.`,
+  );
+  return {
+    mode: "live",
+    health: draft.health,
+    body: String(out.body ?? draft.body).slice(0, 4000),
   };
 }
