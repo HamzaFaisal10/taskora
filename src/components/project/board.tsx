@@ -118,6 +118,8 @@ function QuickAdd({ statusId }: { statusId: string }) {
   );
 }
 
+const DONE_PREVIEW = 8;
+
 function Column({
   status,
   ids,
@@ -131,6 +133,15 @@ function Column({
     id: `col:${status.id}`,
     data: { type: "column", statusId: status.id },
   });
+  // Finished work piles up; show the most recent cards and keep the rest one click away.
+  const [expanded, setExpanded] = useState(false);
+  const isDone = status.category === "completed" || status.category === "canceled";
+  const ordered = isDone
+    ? [...ids].sort((a, b) =>
+        (tasks.get(b)?.completedAt ?? "").localeCompare(tasks.get(a)?.completedAt ?? ""),
+      )
+    : ids;
+  const visible = isDone && !expanded ? ordered.slice(0, DONE_PREVIEW) : ordered;
   return (
     <section
       aria-label={status.name}
@@ -148,12 +159,21 @@ function Column({
           isOver && ids.length === 0 && "bg-accent-soft/40 rounded-control",
         )}
       >
-        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          {ids.map((id) => {
+        <SortableContext items={visible} strategy={verticalListSortingStrategy}>
+          {visible.map((id) => {
             const t = tasks.get(id);
             return t ? <SortableCard key={id} task={t} /> : null;
           })}
         </SortableContext>
+        {visible.length < ordered.length && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="text-muted hover:text-fg hover:bg-elevated rounded-control h-8 text-[13px] transition-colors"
+          >
+            Show {ordered.length - visible.length} more
+          </button>
+        )}
         <QuickAdd statusId={status.id} />
       </div>
     </section>

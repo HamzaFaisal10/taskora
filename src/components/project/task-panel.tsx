@@ -106,6 +106,14 @@ function DateField({
   );
 }
 
+/** "3 hours ago", never "in 1 second" when the server clock is slightly ahead. */
+function ago(iso: string) {
+  const d = parseISO(iso);
+  return Date.now() - d.getTime() < 45_000
+    ? "just now"
+    : formatDistanceToNowStrict(d, { addSuffix: true });
+}
+
 const ACTIVITY: Record<string, string> = {
   created: "created the task",
   status_changed: "changed the status",
@@ -534,7 +542,7 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
                   <p className="text-[13px]">
                     <span className="font-medium">{c.author?.name ?? "Former member"}</span>{" "}
                     <time className="text-subtle text-xs" dateTime={c.createdAt}>
-                      {formatDistanceToNowStrict(parseISO(c.createdAt), { addSuffix: true })}
+                      {ago(c.createdAt)}
                     </time>
                   </p>
                   <p className="text-fg-2 mt-0.5 text-sm leading-relaxed whitespace-pre-wrap">
@@ -582,10 +590,7 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
                 />
                 <span className="text-fg font-medium">{a.actor?.name ?? "Taskora"}</span>{" "}
                 {ACTIVITY[a.action] ?? a.action.replace(/_/g, " ")}
-                <span className="text-subtle">
-                  {" "}
-                  · {formatDistanceToNowStrict(parseISO(a.createdAt), { addSuffix: true })}
-                </span>
+                <span className="text-subtle"> · {ago(a.createdAt)}</span>
               </li>
             ))}
             <li className="text-subtle text-[13px]">

@@ -57,7 +57,8 @@ export function TimelineView() {
   const todayX = x(new Date());
 
   useEffect(() => {
-    scroller.current?.scrollTo({ left: Math.max(0, todayX - 160) });
+    const el = scroller.current;
+    el?.scrollTo({ left: Math.max(0, todayX - el.clientWidth * 0.3) });
   }, [todayX]);
 
   if (scheduled.length === 0) {
@@ -101,7 +102,10 @@ export function TimelineView() {
         <button
           type="button"
           onClick={() =>
-            scroller.current?.scrollTo({ left: Math.max(0, todayX - 160), behavior: "smooth" })
+            scroller.current?.scrollTo({
+              left: Math.max(0, todayX - scroller.current.clientWidth * 0.3),
+              behavior: "smooth",
+            })
           }
           className="border-border bg-card hover:bg-elevated rounded-control border px-2.5 py-1 text-xs font-medium"
         >

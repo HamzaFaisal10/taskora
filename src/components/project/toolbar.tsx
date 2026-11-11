@@ -203,7 +203,10 @@ export function ProjectToolbar() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-2 sm:px-8">
-        <nav aria-label="Project views" className="-mx-1 flex overflow-x-auto">
+        <nav
+          aria-label="Project views"
+          className="-mx-1 -mb-2 flex [scrollbar-width:none] overflow-x-auto overflow-y-hidden pb-2 [&::-webkit-scrollbar]:hidden"
+        >
           {VIEWS.map((v) => {
             const active = current === v.slug;
             return (
@@ -214,7 +217,7 @@ export function ProjectToolbar() {
                 className={cn(
                   "text-muted hover:text-fg relative flex h-9 items-center gap-1.5 px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors [&_svg]:size-4",
                   active &&
-                    "text-fg after:bg-accent after:absolute after:inset-x-2 after:-bottom-2 after:h-0.5 after:rounded-full",
+                    "text-fg after:bg-accent after:absolute after:inset-x-2 after:-bottom-0 after:h-0.5 after:rounded-full",
                 )}
               >
                 <v.icon aria-hidden />
