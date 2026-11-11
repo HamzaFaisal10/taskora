@@ -78,6 +78,10 @@ export function InviteForm({ slug, disabled }: { slug: string; disabled?: boolea
           Create invite
         </Button>
       </form>
+      <p className="text-subtle mt-2 text-xs leading-relaxed">
+        Members see every project. Guests (clients, freelancers) see only projects you share with
+        them: open a project and use <span className="text-fg-2">Share</span>.
+      </p>
       <div className="mt-3">
         <FieldError>
           {state?.error ?? (disabled ? "Invites are turned off in the demo workspace." : undefined)}

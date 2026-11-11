@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Megaphone,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ProjectDialog } from "@/components/shell/new-project";
 import { PlanDialog } from "./plan-dialog";
+import { ShareDialog } from "./share-dialog";
 import { ColumnsDialog } from "./columns-dialog";
 import { FieldsDialog } from "./custom-fields";
 import { useWorkspace } from "@/components/shell/workspace-provider";
@@ -283,6 +285,21 @@ function ProjectMenu() {
   );
 }
 
+function ShareButton() {
+  const { workspace } = useWorkspace();
+  const [open, setOpen] = useState(false);
+  if (workspace.role !== "owner" && workspace.role !== "admin") return null;
+  return (
+    <>
+      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        <UserPlus /> <span className="hidden sm:inline">Share</span>
+        <span className="sr-only sm:hidden">Share project</span>
+      </Button>
+      {open && <ShareDialog open={open} onOpenChange={setOpen} />}
+    </>
+  );
+}
+
 function PlanButton() {
   const { canEdit } = useProject();
   const [open, setOpen] = useState(false);
@@ -316,6 +333,7 @@ export function ProjectToolbar() {
           <span className="text-subtle font-mono text-xs font-normal">{project.key}</span>
         </h1>
         <div className="ml-auto flex items-center gap-2">
+          <ShareButton />
           <ProjectMenu />
           <PlanButton />
           <NewTaskDialog />

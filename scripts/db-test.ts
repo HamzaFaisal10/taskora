@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /**
  * Database tests: applies every migration to a throwaway local Postgres and
  * checks the rules that keep workspaces private, the plan limits, the RPCs and
@@ -794,6 +795,72 @@ async function main() {
       as(owner, () => q("select public.accept_invite($1)", [invite.token])),
       /INVITE_INVALID/,
     );
+  });
+
+  await test("a guest invite shares only the projects it names", async () => {
+    const ws = await as(
+      outsider,
+      () =>
+        one<{ id: string }>("select (public.create_workspace('Guest Co', 'guest-co')).id as id"),
+      { keep: true },
+    );
+    const [shared, hidden] = await as(
+      outsider,
+      async () => {
+        // Ids are made up front: reading a new project back with RETURNING runs into its select policy.
+        const a = { id: randomUUID() };
+        const b = { id: randomUUID() };
+        await q(
+          "insert into public.projects (id, workspace_id, key, name, created_by) values ($1, $2, 'SHR', 'Shared', $3)",
+          [a.id, ws.id, outsider],
+        );
+        await q(
+          "insert into public.projects (id, workspace_id, key, name, created_by) values ($1, $2, 'HID', 'Hidden', $3)",
+          [b.id, ws.id, outsider],
+        );
+        await q(
+          "insert into public.tasks (project_id, title) values ($1, 'Visible to the client')",
+          [a.id],
+        );
+        return [a.id, b.id];
+      },
+      { keep: true },
+    );
+    const guest = await createAuthUser("client@guest.example", "Client Person");
+    const invite = await as(
+      outsider,
+      () =>
+        one<{ token: string }>(
+          "insert into public.workspace_invites (workspace_id, email, role, invited_by, project_ids) values ($1, 'client@guest.example', 'guest', $2, array[$3::uuid]) returning token",
+          [ws.id, outsider, shared],
+        ),
+      { keep: true },
+    );
+    await as(guest, () => q("select public.accept_invite($1)", [invite.token]), { keep: true });
+    await as(guest, async () => {
+      const projects = await q<{ key: string }>(
+        "select key from public.projects where workspace_id = $1 order by key",
+        [ws.id],
+      );
+      assert.deepEqual(
+        projects.map((p) => p.key),
+        ["SHR"],
+      );
+      const task = await one<{ id: string }>("select id from public.tasks where project_id = $1", [
+        shared,
+      ]);
+      await q(
+        "insert into public.comments (task_id, author_id, body) values ($1, $2, 'Looks good')",
+        [task.id, guest],
+      );
+      const changed = await q(
+        "update public.tasks set title = 'Changed' where id = $1 returning id",
+        [task.id],
+      );
+      assert.equal(changed.length, 0, "guests can't edit tasks");
+      const none = await q("select id from public.projects where id = $1", [hidden]);
+      assert.equal(none.length, 0);
+    });
   });
 
   await test("the shared demo account can't create workspaces", async () => {
