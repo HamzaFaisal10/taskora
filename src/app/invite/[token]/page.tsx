@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { requireViewer } from "@/lib/workspace";
+import { AcceptButton } from "./accept-button";
 
 export const metadata: Metadata = { title: "Join workspace" };
 
@@ -41,9 +41,7 @@ export default async function InvitePage({ params, searchParams }: PageProps<"/i
         )}
         <form action={accept}>
           <input type="hidden" name="token" value={token} />
-          <Button type="submit" size="lg" className="w-full">
-            Accept invitation
-          </Button>
+          <AcceptButton />
         </form>
       </div>
     </main>

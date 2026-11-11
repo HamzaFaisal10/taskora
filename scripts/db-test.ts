@@ -763,6 +763,39 @@ async function main() {
     });
   });
 
+  await test("accepting an invite twice opens the workspace instead of failing", async () => {
+    const ws = await as(
+      outsider,
+      () =>
+        one<{ id: string }>("select (public.create_workspace('Twice Co', 'twice-co')).id as id"),
+      { keep: true },
+    );
+    const invitee = await createAuthUser("twice@outside.example", "Twice Person");
+    const invite = await as(
+      outsider,
+      () =>
+        one<{ token: string }>(
+          "insert into public.workspace_invites (workspace_id, email, role, invited_by) values ($1, 'twice@outside.example', 'member', $2) returning token",
+          [ws.id, outsider],
+        ),
+      { keep: true },
+    );
+    const first = await as(
+      invitee,
+      () => one<{ id: string }>("select public.accept_invite($1) as id", [invite.token]),
+      { keep: true },
+    );
+    const second = await as(invitee, () =>
+      one<{ id: string }>("select public.accept_invite($1) as id", [invite.token]),
+    );
+    assert.equal(first.id, ws.id);
+    assert.equal(second.id, ws.id);
+    await rejects(
+      as(owner, () => q("select public.accept_invite($1)", [invite.token])),
+      /INVITE_INVALID/,
+    );
+  });
+
   await test("the shared demo account can't create workspaces", async () => {
     await rejects(
       as(owner, () => q("select public.create_workspace('Visitor Co', 'visitor-co')")),
