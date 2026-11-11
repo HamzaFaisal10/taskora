@@ -175,6 +175,8 @@
 @layer base {
   html {
     background: var(--bg);
+    /* Nothing may make the page itself scroll sideways on a phone; wide views scroll inside themselves. */
+    overflow-x: clip;
   }
 
   body {

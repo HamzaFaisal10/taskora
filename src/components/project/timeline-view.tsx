@@ -267,7 +267,7 @@ export function TimelineView() {
         </div>
 
         {/* Chart */}
-        <div ref={scroller} className="min-w-0 flex-1 overflow-x-auto">
+        <div ref={scroller} className="relative min-w-0 flex-1 overflow-x-auto">
           <div className="relative" style={{ width }}>
             <div className="border-border relative h-14 border-b">
               {sprints.map((s) => {

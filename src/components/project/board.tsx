@@ -271,7 +271,7 @@ export function Board() {
         },
       }}
     >
-      <div className="flex h-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-4 pb-6 sm:snap-none sm:px-8">
+      <div className="relative flex h-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-4 pb-6 sm:snap-none sm:px-8">
         {visibleStatuses.map((s) => (
           <Column key={s.id} status={s} ids={columns[s.id] ?? []} tasks={byId} />
         ))}
