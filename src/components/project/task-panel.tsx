@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/surface";
 import { addComment, getTaskDetail } from "@/lib/project/actions";
+import { AiAssist } from "./ai-assist";
 import type { TaskDetail } from "@/lib/project/types";
 import { cn } from "@/lib/utils";
 import {
@@ -416,6 +417,14 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
             </Property>
           )}
         </div>
+
+        <AiAssist
+          taskId={task.id}
+          number={task.number}
+          hasDescription={task.description.trim().length > 0}
+          onUseDescription={(text) => patch({ description: text })}
+          onSubtasksAdded={reload}
+        />
 
         <section className="mt-6">
           <h3 className="text-subtle mb-1.5 text-xs font-medium tracking-wide uppercase">

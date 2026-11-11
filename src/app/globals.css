@@ -31,6 +31,9 @@
   --accent-text: #cdf461;
 
   --danger: #ff7a66;
+  /* Charts: validated for contrast on --card (see docs) */
+  --chart-1: #cdf461;
+  --chart-context: #6b717b;
   --danger-soft: #3a1f1b;
   --danger-text: #ff9c8c;
   --warning: #f5b841;
@@ -74,6 +77,8 @@
   --accent-text: #4d6b00;
 
   --danger: #d93d2b;
+  --chart-1: #5b8a00;
+  --chart-context: #8a8f98;
   --danger-soft: #fdecea;
   --danger-text: #b42318;
   --warning: #c98a0b;
@@ -95,6 +100,8 @@
 }
 
 @theme inline {
+  --color-chart-1: var(--chart-1);
+  --color-chart-context: var(--chart-context);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-card: var(--card);

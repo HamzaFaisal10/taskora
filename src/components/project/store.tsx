@@ -31,7 +31,12 @@ type Store = ProjectData & {
   move: (taskId: string, statusId: string, beforeId: string | null, afterId: string | null) => void;
   create: (
     title: string,
-    opts?: { statusId?: string; dueDate?: string | null; parentId?: string | null },
+    opts?: {
+      statusId?: string;
+      dueDate?: string | null;
+      parentId?: string | null;
+      estimate?: number | null;
+    },
   ) => Promise<string | null>;
   setLabels: (taskId: string, labelIds: string[]) => void;
   archive: (taskId: string) => void;

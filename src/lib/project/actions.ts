@@ -107,6 +107,7 @@ export async function createTask(input: {
   dueDate?: string | null;
   parentId?: string | null;
   assigneeId?: string | null;
+  estimate?: number | null;
 }): Promise<Result<{ id: string; number: number }>> {
   const p = z
     .object({
@@ -116,6 +117,7 @@ export async function createTask(input: {
       dueDate: date.optional(),
       parentId: uuid.nullable().optional(),
       assigneeId: uuid.nullable().optional(),
+      estimate: z.number().int().min(0).max(100).nullable().optional(),
     })
     .safeParse(input);
   if (!p.success) return fail(p.error.issues[0].message);
@@ -129,6 +131,7 @@ export async function createTask(input: {
       due_date: p.data.dueDate ?? null,
       parent_id: p.data.parentId ?? null,
       assignee_id: p.data.assigneeId ?? null,
+      estimate: p.data.estimate ?? null,
     })
     .select("id, number")
     .single();
