@@ -19,7 +19,7 @@ export const PLANS: Record<
     features: [
       "3 active projects",
       "Up to 5 members",
-      "Board, list and calendar",
+      "Every view, sprints and automations",
       "20 AI credits a month",
     ],
   },
@@ -29,10 +29,9 @@ export const PLANS: Record<
     tagline: "For product teams that ship every week.",
     limits: { projects: null, members: 25, aiCredits: 200 },
     features: [
+      "Everything in Free",
       "Unlimited projects",
       "Up to 25 members",
-      "Sprints, timeline and goals",
-      "Automations and forms",
       "200 AI credits a month",
     ],
   },
@@ -41,7 +40,12 @@ export const PLANS: Record<
     pricePerSeat: 16,
     tagline: "For larger teams that need control.",
     limits: { projects: null, members: null, aiCredits: 1_000_000 },
-    features: ["Everything in Pro", "Unlimited members", "Unlimited AI", "Priority support"],
+    features: [
+      "Everything in Pro",
+      "Unlimited members",
+      "Unlimited AI credits",
+      "Priority support",
+    ],
   },
 };
 

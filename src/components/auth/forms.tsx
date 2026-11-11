@@ -64,11 +64,19 @@ function Sent({ message }: { message: string }) {
   );
 }
 
-export function DemoButton({ className }: { className?: string }) {
+export function DemoButton({
+  className,
+  variant = "ai",
+  label = "Try the live demo — no sign-up",
+}: {
+  className?: string;
+  variant?: "ai" | "primary";
+  label?: string;
+}) {
   return (
     <form action="/api/demo" method="post" className={className}>
-      <Button type="submit" variant="ai" size="lg" className="w-full">
-        Try the live demo — no sign-up
+      <Button type="submit" variant={variant} size="lg" className="w-full">
+        {label}
       </Button>
     </form>
   );
