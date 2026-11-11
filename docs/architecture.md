@@ -103,6 +103,14 @@ All dates are relative to **today**, so the demo always looks current. It runs o
   `⌘K` opens a command menu for pages, projects, workspaces and theme. The theme can be Dark, Light or
   System.
 
+### Handling secrets
+
+- The service-role key is read only on the server (`src/lib/supabase/admin.ts`, marked `server-only`).
+- Keys pasted into a dashboard sometimes pick up a stray space or line break; `cleanKey()` strips
+  whitespace, since real keys never contain any.
+- Server logs record only an error's name, code and status (`safeError()`), never its message, because
+  some auth errors echo request headers.
+
 ## 6. Keeping the demo fresh
 
 `/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
