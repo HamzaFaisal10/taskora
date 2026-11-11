@@ -488,9 +488,10 @@ begin
     (t_kanban, u_ayesha, n - interval '2 days 3 hours', n - interval '2 days 2 hours', 'Persist order'),
     (t_crash, u_zain, n - interval '1 day 2 hours', n - interval '1 day 20 minutes', 'Reproduce and trace'),
     (t_onb, u_sara, n - interval '1 day 6 hours', n - interval '1 day 2 hours 30 minutes', 'Figma draft');
-  -- Alex has a timer running on the Stripe task right now.
+  -- Zain has a timer running right now. The demo account starts with none, so visitors never see
+  -- a clock that has been ticking since the nightly reset.
   insert into public.time_entries (task_id, user_id, started_at, note)
-  values (t_stripe, v_owner, n - interval '84 minutes', '');
+  values (t_crash, u_zain, n - interval '40 minutes', '');
 
   insert into public.automations (project_id, name, trigger, conditions, actions, enabled, run_count, last_run_at, created_by) values
     (p_mob, 'Review goes to Sara',
