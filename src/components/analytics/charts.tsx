@@ -275,3 +275,52 @@ export function WorkloadChart({
     </figure>
   );
 }
+
+/** Tasks per workflow stage, in workflow order. One hue: the bars only show size. */
+export function StatusChart({
+  rows,
+}: {
+  rows: { category: string; label: string; count: number; share: number }[];
+}) {
+  const [hover, setHover] = useState<string | null>(null);
+  const max = Math.max(...rows.map((r) => r.count), 1);
+  const total = rows.reduce((n, r) => n + r.count, 0);
+  return (
+    <figure>
+      <figcaption className="mb-3 flex items-baseline gap-2">
+        <h3 className="text-sm font-semibold">Tasks by status</h3>
+        <span className="text-subtle text-xs">{total} tasks</span>
+      </figcaption>
+      {rows.length === 0 ? (
+        <p className="text-subtle py-6 text-center text-sm">No tasks yet.</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {rows.map((r) => (
+            <li
+              key={r.category}
+              className={cn(
+                "grid grid-cols-[6.5rem_minmax(0,1fr)_4.5rem] items-center gap-3 rounded-md text-[13px]",
+                hover === r.category && "bg-elevated/60",
+              )}
+              onMouseEnter={() => setHover(r.category)}
+              onMouseLeave={() => setHover(null)}
+              title={`${r.label}: ${r.count} tasks (${Math.round(r.share * 100)}%)`}
+            >
+              <span className="truncate">{r.label}</span>
+              <span className="flex h-3.5" aria-hidden>
+                <span
+                  className="bg-chart-1 rounded-[4px]"
+                  style={{ width: `${Math.max((r.count / max) * 100, 1.5)}%` }}
+                />
+              </span>
+              <span className="text-muted text-right tabular-nums">
+                {r.count}
+                <span className="text-subtle ml-1.5 text-[11px]">{Math.round(r.share * 100)}%</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </figure>
+  );
+}

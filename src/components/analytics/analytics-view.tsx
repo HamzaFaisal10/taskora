@@ -1,13 +1,23 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Download, Minus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/page-header";
 import { Card, Progress } from "@/components/ui/surface";
-import { byProject, kpis, weekly, workload, type AnalyticsTask } from "@/lib/analytics/compute";
+import {
+  byProject,
+  byStatus,
+  CATEGORY_LABEL,
+  kpis,
+  weekly,
+  workload,
+  type AnalyticsTask,
+} from "@/lib/analytics/compute";
+import { downloadCsv, toCsv } from "@/lib/csv";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { FlowChart, WorkloadChart } from "./charts";
+import { FlowChart, StatusChart, WorkloadChart } from "./charts";
 
 type Project = { id: string; key: string; name: string; color: string };
 
@@ -100,6 +110,53 @@ export function AnalyticsView({
     [scoped, people],
   );
   const perProject = useMemo(() => byProject(tasks), [tasks]);
+  const statusRows = useMemo(() => byStatus(scoped), [scoped]);
+
+  const exportCsv = () => {
+    const today = new Date();
+    const name = (id: string | null) =>
+      id ? (people.find((p) => p.id === id)?.name ?? "Former member") : "";
+    const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? "";
+    const header = [
+      "Ref",
+      "Title",
+      "Project",
+      "Status",
+      "Stage",
+      "Priority",
+      "Assignee",
+      "Estimate",
+      "Created",
+      "Completed",
+      "Due",
+      "Overdue",
+    ];
+    const rows = scoped.map((t) => [
+      t.ref,
+      t.title,
+      projectName(t.projectId),
+      t.status,
+      CATEGORY_LABEL[t.category as keyof typeof CATEGORY_LABEL] ?? t.category,
+      t.priority,
+      name(t.assigneeId),
+      t.estimate,
+      t.createdAt.slice(0, 10),
+      t.completedAt?.slice(0, 10),
+      t.dueDate,
+      !t.completedAt &&
+      t.dueDate &&
+      t.dueDate < today.toISOString().slice(0, 10) &&
+      !["completed", "canceled"].includes(t.category)
+        ? "yes"
+        : "",
+    ]);
+    const scope =
+      projectId === "all" ? slug : (projects.find((p) => p.id === projectId)?.key ?? slug);
+    downloadCsv(
+      `taskora-${scope.toLowerCase()}-tasks-${today.toISOString().slice(0, 10)}.csv`,
+      toCsv([header, ...rows]),
+    );
+  };
 
   const sel = "border-border bg-card rounded-control h-8 border px-2.5 text-[13px]";
 
@@ -133,6 +190,9 @@ export function AnalyticsView({
               <option value={8}>Last 8 weeks</option>
               <option value={12}>Last 12 weeks</option>
             </select>
+            <Button variant="secondary" size="sm" onClick={exportCsv} disabled={!scoped.length}>
+              <Download /> Export CSV
+            </Button>
           </div>
         }
       />
@@ -170,6 +230,10 @@ export function AnalyticsView({
             <WorkloadChart rows={load} />
           </Card>
         </div>
+
+        <Card className="p-5">
+          <StatusChart rows={statusRows} />
+        </Card>
 
         <Card className="overflow-x-auto p-0">
           <table className="w-full min-w-[560px] text-sm">

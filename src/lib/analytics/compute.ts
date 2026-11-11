@@ -17,6 +17,11 @@ export type AnalyticsTask = {
   dueDate: string | null;
   estimate: number | null;
   category: string;
+  /** Extra fields used by the CSV export. */
+  ref?: string;
+  title?: string;
+  status?: string;
+  priority?: string;
 };
 
 export type WeekPoint = { start: string; label: string; completed: number; created: number };
@@ -148,4 +153,32 @@ export function byProject(tasks: AnalyticsTask[], days = 30, now = new Date()): 
     map.set(t.projectId, p);
   }
   return [...map.values()];
+}
+
+export const CATEGORY_ORDER = [
+  "triage",
+  "backlog",
+  "unstarted",
+  "started",
+  "review",
+  "completed",
+  "canceled",
+] as const;
+export const CATEGORY_LABEL: Record<(typeof CATEGORY_ORDER)[number], string> = {
+  triage: "Triage",
+  backlog: "Backlog",
+  unstarted: "To do",
+  started: "In progress",
+  review: "In review",
+  completed: "Done",
+  canceled: "Canceled",
+};
+
+/** Task counts per workflow stage, in workflow order. Stages with no tasks are left out. */
+export function byStatus(tasks: AnalyticsTask[]) {
+  const total = tasks.length;
+  return CATEGORY_ORDER.map((category) => {
+    const count = tasks.filter((t) => t.category === category).length;
+    return { category, label: CATEGORY_LABEL[category], count, share: total ? count / total : 0 };
+  }).filter((r) => r.count > 0);
 }

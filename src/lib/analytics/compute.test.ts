@@ -110,3 +110,26 @@ describe("analytics", () => {
     expect(p).toMatchObject({ total: 2, open: 1, done: 1, completedRecent: 1 });
   });
 });
+
+describe("byStatus", () => {
+  it("counts per stage in workflow order and skips empty stages", async () => {
+    const { byStatus } = await import("./compute");
+    const t = (category: string) => ({
+      id: category + Math.random(),
+      projectId: "p",
+      assigneeId: null,
+      createdAt: "2026-11-01T00:00:00Z",
+      completedAt: null,
+      dueDate: null,
+      estimate: null,
+      category,
+    });
+    const rows = byStatus([t("completed"), t("started"), t("completed"), t("backlog")]);
+    expect(rows.map((r) => [r.label, r.count])).toEqual([
+      ["Backlog", 1],
+      ["In progress", 1],
+      ["Done", 2],
+    ]);
+    expect(rows[2].share).toBe(0.5);
+  });
+});

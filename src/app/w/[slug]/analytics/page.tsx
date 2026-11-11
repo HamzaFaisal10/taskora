@@ -15,7 +15,7 @@ export default async function AnalyticsPage({ params }: PageProps<"/w/[slug]/ana
     supabase
       .from("tasks")
       .select(
-        "id, project_id, assignee_id, created_at, completed_at, due_date, estimate, task_statuses!inner(category)",
+        "id, number, title, priority, project_id, assignee_id, created_at, completed_at, due_date, estimate, task_statuses!inner(name, category)",
       )
       .eq("workspace_id", workspace.id)
       .is("archived_at", null)
@@ -29,14 +29,18 @@ export default async function AnalyticsPage({ params }: PageProps<"/w/[slug]/ana
 
   type Row = {
     id: string;
+    number: number;
+    title: string;
+    priority: string;
     project_id: string;
     assignee_id: string | null;
     created_at: string;
     completed_at: string | null;
     due_date: string | null;
     estimate: number | null;
-    task_statuses: { category: string };
+    task_statuses: { name: string; category: string };
   };
+  const keyOf = new Map(projects.map((p) => [p.id, p.key]));
   const rows: AnalyticsTask[] = ((tasks.data ?? []) as unknown as Row[]).map((r) => ({
     id: r.id,
     projectId: r.project_id,
@@ -46,6 +50,10 @@ export default async function AnalyticsPage({ params }: PageProps<"/w/[slug]/ana
     dueDate: r.due_date,
     estimate: r.estimate,
     category: r.task_statuses.category,
+    ref: `${keyOf.get(r.project_id) ?? "?"}-${r.number}`,
+    title: r.title,
+    status: r.task_statuses.name,
+    priority: r.priority,
   }));
   type M = { profiles: { id: string; full_name: string } };
   const people = ((members.data ?? []) as unknown as M[]).map((m) => ({
