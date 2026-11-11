@@ -46,11 +46,6 @@ export function AppShell({
   return (
     <WorkspaceProvider value={value}>
       <NewProjectProvider>
-        {value.workspace.isDemo && (
-          <div className="bg-accent text-accent-fg px-4 py-1.5 text-center text-xs font-medium">
-            You’re exploring a live demo workspace. Changes reset every night.
-          </div>
-        )}
         <div className="flex min-h-0 flex-1">
           <aside className="border-border bg-surface hidden w-64 shrink-0 border-r lg:block">
             <div className="sticky top-0 h-dvh">
