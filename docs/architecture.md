@@ -111,13 +111,28 @@ All dates are relative to **today**, so the demo always looks current. It runs o
 - Server logs record only an error's name, code and status (`safeError()`), never its message, because
   some auth errors echo request headers.
 
-## 6. Keeping the demo fresh
+## 6. Project views and the task panel
+
+- **One load, four views.** `getProjectData()` (`src/lib/project/data.ts`) fetches statuses, tasks, people,
+  labels and sprints once in the project layout. Board, List, Calendar and Timeline are client components
+  that read the same store (`src/components/project/store.tsx`), so switching views is instant and the
+  search and filters carry over.
+- **Optimistic updates.** Every change (drag a card, pick a priority, move a date) updates the screen first,
+  then calls a server action in `src/lib/project/actions.ts`. If the database refuses it (permissions,
+  validation), the change is rolled back and a toast explains why.
+- **Drag and drop** uses dnd-kit with mouse, touch (press and hold) and keyboard sensors. Dropping a card
+  sends only its new neighbours to `move_task()`, which picks a position between them.
+- **The task panel** opens from `?task=MOB-123`, so every task has a shareable link and the browser back
+  button closes it. It loads comments, subtasks, dependencies and the activity log on demand.
+- Long "Done" columns show the most recent cards first, with the rest one click away.
+
+## 7. Keeping the demo fresh
 
 `/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
 carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
 Supabase project never pauses for inactivity.
 
-## 7. Testing
+## 8. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
