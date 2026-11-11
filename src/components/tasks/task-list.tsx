@@ -1,4 +1,5 @@
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { DueLabel } from "@/components/tasks/due-label";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityIcon, StatusDot, type StatusGroup } from "@/components/tasks/task-meta";
 import type { TaskListItem } from "@/lib/data/tasks";
@@ -7,65 +8,53 @@ import { cn } from "@/lib/utils";
 const toGroup = (category: string): StatusGroup =>
   category === "triage" ? "backlog" : (category as StatusGroup);
 
-export function DueLabel({ date, done }: { date: string | null; done?: boolean }) {
-  if (!date) return null;
-  const d = parseISO(date);
-  const diff = differenceInCalendarDays(d, new Date());
-  const label =
-    diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff === -1 ? "Yesterday" : format(d, "MMM d");
-  return (
-    <span
-      className={cn(
-        "text-muted text-xs tabular-nums",
-        !done && diff < 0 && "text-danger-text",
-        !done && diff === 0 && "text-warning-text",
-      )}
-    >
-      {label}
-    </span>
-  );
-}
-
 export function TaskRow({
   task,
+  slug,
   showProject = false,
 }: {
   task: TaskListItem;
+  slug: string;
   showProject?: boolean;
 }) {
   const done = task.status.category === "completed" || task.status.category === "canceled";
   return (
-    <li className="border-border-subtle hover:bg-surface flex h-11 items-center gap-3 border-b px-4 text-sm sm:px-8">
-      <PriorityIcon priority={task.priority} />
-      <span className="text-subtle w-16 shrink-0 font-mono text-[11px]">{task.ref}</span>
-      <StatusDot color={task.status.color} group={toGroup(task.status.category)} />
-      <span className={cn("min-w-0 flex-1 truncate", done && "text-muted line-through")}>
-        {task.title}
-      </span>
-      {showProject && (
-        <span className="text-muted hidden items-center gap-1.5 text-xs sm:flex">
-          <span
-            className="size-2 rounded-[2px]"
-            style={{ background: task.project.color }}
-            aria-hidden
-          />
-          {task.project.name}
+    <li>
+      <Link
+        href={`/w/${slug}/p/${task.project.key}?task=${task.ref}`}
+        className="border-border-subtle hover:bg-surface flex h-11 items-center gap-3 border-b px-4 text-sm sm:px-8"
+      >
+        <PriorityIcon priority={task.priority} />
+        <span className="text-subtle w-16 shrink-0 font-mono text-[11px]">{task.ref}</span>
+        <StatusDot color={task.status.color} group={toGroup(task.status.category)} />
+        <span className={cn("min-w-0 flex-1 truncate", done && "text-muted line-through")}>
+          {task.title}
         </span>
-      )}
-      <DueLabel date={task.dueDate} done={done} />
-      {task.assignee ? (
-        <Avatar
-          name={task.assignee.name}
-          src={task.assignee.avatarUrl}
-          seed={task.assignee.id}
-          size={22}
-        />
-      ) : (
-        <span
-          className="border-border size-[22px] rounded-full border border-dashed"
-          aria-label="Unassigned"
-        />
-      )}
+        {showProject && (
+          <span className="text-muted hidden items-center gap-1.5 text-xs sm:flex">
+            <span
+              className="size-2 rounded-[2px]"
+              style={{ background: task.project.color }}
+              aria-hidden
+            />
+            {task.project.name}
+          </span>
+        )}
+        <DueLabel date={task.dueDate} done={done} />
+        {task.assignee ? (
+          <Avatar
+            name={task.assignee.name}
+            src={task.assignee.avatarUrl}
+            seed={task.assignee.id}
+            size={22}
+          />
+        ) : (
+          <span
+            className="border-border size-[22px] rounded-full border border-dashed"
+            aria-label="Unassigned"
+          />
+        )}
+      </Link>
     </li>
   );
 }
@@ -76,12 +65,14 @@ export function TaskGroup({
   category,
   tasks,
   showProject,
+  slug,
 }: {
   title: string;
   color?: string;
   category?: string;
   tasks: TaskListItem[];
   showProject?: boolean;
+  slug: string;
 }) {
   if (tasks.length === 0) return null;
   return (
@@ -93,7 +84,7 @@ export function TaskGroup({
       </h2>
       <ul>
         {tasks.map((t) => (
-          <TaskRow key={t.id} task={t} showProject={showProject} />
+          <TaskRow key={t.id} task={t} slug={slug} showProject={showProject} />
         ))}
       </ul>
     </section>

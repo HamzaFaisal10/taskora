@@ -56,20 +56,3 @@ export async function myOpenTasks(workspaceId: string, userId: string) {
   if (error) throw error;
   return (data as unknown as Row[]).map(toItem);
 }
-
-/** Top-level tasks in a project, ordered by status then position. */
-export async function projectTasks(projectId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(SELECT)
-    .eq("project_id", projectId)
-    .is("archived_at", null)
-    .is("parent_id", null)
-    .order("position")
-    .limit(500);
-  if (error) throw error;
-  return (data as unknown as Row[])
-    .sort((a, b) => a.task_statuses.position - b.task_statuses.position)
-    .map(toItem);
-}

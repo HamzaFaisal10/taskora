@@ -23,7 +23,9 @@ export default async function MyTasksPage({ params }: PageProps<"/w/[slug]/my-ta
           description="Tasks assigned to you across every project show up here."
         />
       ) : (
-        [...byProject].map(([name, list]) => <TaskGroup key={name} title={name} tasks={list} />)
+        [...byProject].map(([name, list]) => (
+          <TaskGroup slug={slug} key={name} title={name} tasks={list} />
+        ))
       )}
     </>
   );

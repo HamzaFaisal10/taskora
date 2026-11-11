@@ -82,10 +82,10 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
             />
           ) : (
             <>
-              <TaskGroup title="Overdue" tasks={overdue} showProject />
-              <TaskGroup title="Due today" tasks={today} showProject />
-              <TaskGroup title="Next 7 days" tasks={week} showProject />
-              <TaskGroup title="Later" tasks={later} showProject />
+              <TaskGroup slug={slug} title="Overdue" tasks={overdue} showProject />
+              <TaskGroup slug={slug} title="Due today" tasks={today} showProject />
+              <TaskGroup slug={slug} title="Next 7 days" tasks={week} showProject />
+              <TaskGroup slug={slug} title="Later" tasks={later} showProject />
             </>
           )}
         </div>
