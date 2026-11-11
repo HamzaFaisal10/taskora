@@ -111,9 +111,10 @@ export function ProjectProvider({
       if (ref) params.set("task", ref);
       else params.delete("task");
       const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      // Shallow URL update: Next.js syncs useSearchParams with the History API without a server round trip.
+      window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
     },
-    [router, pathname, searchParams],
+    [pathname, searchParams],
   );
 
   const run = useCallback(
