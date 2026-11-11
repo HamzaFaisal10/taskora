@@ -189,7 +189,21 @@ All dates are relative to **today**, so the demo always looks current. It runs o
 carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
 Supabase project never pauses for inactivity.
 
-## 11. Testing
+## 11. Collaboration: files, mentions and live updates
+
+- **Attachments** live in a private Storage bucket. Object paths start with the task id, and the bucket's
+  policies call the same `can_view_task` / `can_write_task` helpers as the tables, so a file is readable
+  exactly when its task is. The browser shows files through short-lived signed URLs.
+- **@mentions** are matched against workspace members' full names when a comment is saved; each person
+  mentioned gets a `mentioned` notification (never the author). Reactions are a small fixed emoji set.
+- **Live updates** use Supabase Realtime on `tasks`, `task_statuses`, `comments` and `notifications`.
+  Realtime applies row level security too, so the hook (`src/lib/realtime/use-live.ts`) hands the channel
+  the signed-in token before subscribing. Changes are debounced into one `router.refresh()` for the board,
+  a reload of the open task panel, or a refresh of the Inbox badge.
+- **Projects and columns** are created and edited in the app: new projects start from a template, and
+  `delete_status` moves a column's tasks before removing it.
+
+## 12. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
