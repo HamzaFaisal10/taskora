@@ -113,6 +113,7 @@ export async function signInWithGoogle(form: FormData) {
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Signs out this browser only; the shared demo account stays signed in for other visitors.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }

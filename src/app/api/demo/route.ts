@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
   const origin = request.nextUrl.origin;
   try {
     const supabase = await createClient();
-    await supabase.auth.signOut();
+    // Local only: a global sign-out would end every other visitor's demo session too.
+    await supabase.auth.signOut({ scope: "local" });
     const tokenHash = await createDemoSignInToken();
     const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });
     if (error) throw error;
