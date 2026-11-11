@@ -27,17 +27,20 @@ type TaskRow = {
 
 /** Everything the board, list, calendar and timeline views need, loaded once per request. */
 export const getProjectData = cache(async (slug: string, key: string): Promise<ProjectData> => {
-  const { workspace } = await getWorkspaceContext(slug);
   const supabase = await createClient();
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, key, name, color, description, workspace_id")
-    .eq("workspace_id", workspace.id)
-    .eq("key", key.toUpperCase())
-    .is("archived_at", null)
-    .maybeSingle();
-  if (!project) notFound();
+  // The project is found by workspace slug + key, so it loads alongside the workspace instead of after it.
+  const [{ workspace }, { data: found }] = await Promise.all([
+    getWorkspaceContext(slug),
+    supabase
+      .from("projects")
+      .select("id, key, name, color, description, workspace_id, workspaces!inner()")
+      .eq("workspaces.slug", slug)
+      .eq("key", key.toUpperCase())
+      .is("archived_at", null)
+      .maybeSingle(),
+  ]);
+  if (!found || found.workspace_id !== workspace.id) notFound();
+  const project = found;
 
   const [statuses, tasks, members, labels, sprints, fields] = await Promise.all([
     supabase

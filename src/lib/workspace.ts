@@ -23,13 +23,23 @@ export type ProjectSummary = {
 };
 export type Viewer = { id: string; name: string; email: string; avatarUrl: string | null };
 
+/**
+ * The signed-in user's id and email from the session token, or a redirect to /login. getClaims checks
+ * the token's signature locally (no network call when the project uses signing keys). Row level security
+ * still checks every query in the database. Cached per request.
+ */
+const requireSession = cache(async (): Promise<{ id: string; email: string }> => {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) redirect("/login");
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
+});
+
 /** The signed-in user, or a redirect to /login. Cached per request. */
 export const requireViewer = cache(async (): Promise<Viewer> => {
+  const user = await requireSession();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, avatar_url")
@@ -37,15 +47,16 @@ export const requireViewer = cache(async (): Promise<Viewer> => {
     .maybeSingle();
   return {
     id: user.id,
-    email: user.email ?? "",
-    name: profile?.full_name || user.email?.split("@")[0] || "You",
+    email: user.email,
+    name: profile?.full_name || user.email.split("@")[0] || "You",
     avatarUrl: profile?.avatar_url ?? null,
   };
 });
 
 /** Every workspace the user belongs to, oldest first. */
 export const listWorkspaces = cache(async (): Promise<WorkspaceSummary[]> => {
-  const viewer = await requireViewer();
+  // Only needs the user id, so it runs alongside the profile lookup instead of after it.
+  const viewer = await requireSession();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("workspace_members")

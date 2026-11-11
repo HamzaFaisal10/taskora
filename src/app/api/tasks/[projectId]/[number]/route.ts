@@ -9,9 +9,13 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_: Request, ctx: RouteContext<"/api/tasks/[projectId]/[number]">) {
   const { projectId, number } = await ctx.params;
+  const started = performance.now();
   const res = await loadTaskDetail(projectId, Number(number));
   return NextResponse.json(res, {
     status: res.ok ? 200 : 404,
-    headers: { "cache-control": "no-store" },
+    headers: {
+      "cache-control": "no-store",
+      "server-timing": `db;dur=${Math.round(performance.now() - started)}`,
+    },
   });
 }
