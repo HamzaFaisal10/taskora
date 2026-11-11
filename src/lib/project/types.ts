@@ -77,6 +77,14 @@ export type TaskDetail = BoardTask & {
     editedAt: string | null;
     author: Person | null;
   }[];
+  time: {
+    id: string;
+    user: Person | null;
+    startedAt: string;
+    endedAt: string | null;
+    durationSeconds: number | null;
+    note: string;
+  }[];
   activity: {
     id: string;
     action: string;

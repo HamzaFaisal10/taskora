@@ -82,7 +82,7 @@ export const getWorkspaceContext = cache(async (slug: string) => {
   if (!workspace) notFound();
 
   const supabase = await createClient();
-  const [projects, favorites, unread] = await Promise.all([
+  const [projects, favorites, unread, running] = await Promise.all([
     supabase
       .from("projects")
       .select("id, key, name, color, health")
@@ -96,13 +96,33 @@ export const getWorkspaceContext = cache(async (slug: string) => {
       .eq("workspace_id", workspace.id)
       .eq("user_id", viewer.id)
       .is("read_at", null),
+    supabase
+      .from("time_entries")
+      .select("started_at, tasks!inner(number, title, workspace_id, projects!inner(key))")
+      .eq("user_id", viewer.id)
+      .eq("tasks.workspace_id", workspace.id)
+      .is("ended_at", null)
+      .maybeSingle(),
   ]);
+  type Running = {
+    started_at: string;
+    tasks: { number: number; title: string; projects: { key: string } };
+  };
+  const r = running.data as unknown as Running | null;
   const favs = new Set((favorites.data ?? []).map((f) => f.project_id as string));
   return {
     viewer,
     workspace,
     workspaces,
     unreadCount: unread.count ?? 0,
+    runningTimer: r
+      ? {
+          startedAt: r.started_at,
+          ref: `${r.tasks.projects.key}-${r.tasks.number}`,
+          projectKey: r.tasks.projects.key,
+          title: r.tasks.title,
+        }
+      : null,
     projects: (projects.data ?? []).map((p) => ({
       ...p,
       favorite: favs.has(p.id),

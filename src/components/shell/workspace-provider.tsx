@@ -9,6 +9,7 @@ export type WorkspaceContextValue = {
   workspaces: WorkspaceSummary[];
   projects: ProjectSummary[];
   unreadCount: number;
+  runningTimer: { startedAt: string; ref: string; projectKey: string; title: string } | null;
 };
 
 const Ctx = createContext<WorkspaceContextValue | null>(null);

@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronsUpDown, LogOut, Plus, Search, Star } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Plus, Search, Square, Star } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useTransition } from "react";
+import { toast } from "sonner";
+import { clock } from "@/components/time/format";
+import { useElapsed } from "@/components/time/use-elapsed";
+import { stopTimer } from "@/lib/time-actions";
 import { signOut } from "@/app/(auth)/actions";
 import { LogoMark } from "@/components/brand/logo";
 import { THEME_OPTIONS } from "@/components/theme";
@@ -124,6 +129,40 @@ function UserMenu() {
   );
 }
 
+function RunningTimer() {
+  const { workspace, runningTimer } = useWorkspace();
+  const elapsed = useElapsed(runningTimer?.startedAt ?? null);
+  const [pending, start] = useTransition();
+  if (!runningTimer) return null;
+  return (
+    <div className="border-accent-border bg-accent-soft/50 rounded-control mb-2 flex items-center gap-2 border px-2 py-1.5">
+      <span className="bg-accent size-2 shrink-0 animate-pulse rounded-full" aria-hidden />
+      <Link
+        href={`/w/${workspace.slug}/p/${runningTimer.projectKey}?task=${runningTimer.ref}`}
+        className="min-w-0 flex-1"
+        title={runningTimer.title}
+      >
+        <span className="text-fg block truncate text-xs font-medium">{runningTimer.title}</span>
+        <span className="text-muted font-mono text-[11px] tabular-nums">{clock(elapsed)}</span>
+      </Link>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            const res = await stopTimer();
+            if (!res.ok) toast.error(res.error);
+          })
+        }
+        className="text-muted hover:text-fg hover:bg-elevated rounded p-1"
+        aria-label="Stop timer"
+      >
+        <Square className="size-3.5 fill-current" />
+      </button>
+    </div>
+  );
+}
+
 export function Sidebar({
   onNavigate,
   onSearch,
@@ -232,6 +271,7 @@ export function Sidebar({
       </div>
 
       <div className="border-border mt-2 border-t pt-2">
+        <RunningTimer />
         <div className="text-subtle flex items-center gap-2 px-2 pb-2 text-[11px]">
           <LogoMark size={14} variant="mono" />
           <span>{PLAN_LABEL[workspace.plan]} plan</span>

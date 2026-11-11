@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/shell/page-header";
+import { SettingsSection } from "@/components/settings/section";
 import { Card } from "@/components/ui/surface";
 import { createClient } from "@/lib/supabase/server";
 import { canManage, getWorkspaceContext, type Role } from "@/lib/workspace";
@@ -52,16 +52,15 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/setti
 
   return (
     <>
-      <PageHeader
-        eyebrow="Settings"
+      <SettingsSection
         title="Members"
         description={
           limit
-            ? `${seats} of ${limit} seats used on the ${workspace.plan === "free" ? "Free" : "Pro"} plan. Guests are free.`
+            ? `${seats} of ${limit} seats used on the ${workspace.plan === "free" ? "Free" : "Pro"} plan. Guests don’t use a seat.`
             : `${seats} members`
         }
       />
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-8">
+      <div className="space-y-6">
         {admin && <InviteForm slug={slug} disabled={workspace.isDemo} />}
         <Card className="overflow-hidden p-0">
           <ul>

@@ -41,7 +41,7 @@ export async function loadTaskDetail(
   const row = t as unknown as Row;
   const key = row.projects.key;
 
-  const [parent, children, deps, comments, activity] = await Promise.all([
+  const [parent, children, deps, comments, activity, time] = await Promise.all([
     row.parent_id
       ? supabase.from("tasks").select("id, number, title").eq("id", row.parent_id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -72,7 +72,23 @@ export async function loadTaskDetail(
       .eq("task_id", row.id)
       .order("created_at", { ascending: false })
       .limit(30),
+    supabase
+      .from("time_entries")
+      .select(
+        "id, started_at, ended_at, duration_seconds, note, user:profiles!time_entries_user_id_fkey(id, full_name, avatar_url)",
+      )
+      .eq("task_id", row.id)
+      .order("started_at", { ascending: false })
+      .limit(50),
   ]);
+  type T = {
+    id: string;
+    started_at: string;
+    ended_at: string | null;
+    duration_seconds: number | null;
+    note: string;
+    user: PersonRow;
+  };
 
   type Child = {
     id: string;
@@ -149,6 +165,14 @@ export async function loadTaskDetail(
           title: d.blocker!.title,
           done: !!d.blocker!.completed_at,
         })),
+      time: ((time.data ?? []) as unknown as T[]).map((e) => ({
+        id: e.id,
+        user: person(e.user),
+        startedAt: e.started_at,
+        endedAt: e.ended_at,
+        durationSeconds: e.duration_seconds,
+        note: e.note,
+      })),
       commentList: ((comments.data ?? []) as unknown as C[]).map((c) => ({
         id: c.id,
         body: c.body,
