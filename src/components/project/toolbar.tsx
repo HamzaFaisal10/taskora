@@ -17,12 +17,14 @@ import {
   Workflow,
   X,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ProjectDialog } from "@/components/shell/new-project";
+import { PlanDialog } from "./plan-dialog";
 import { ColumnsDialog } from "./columns-dialog";
 import { FieldsDialog } from "./custom-fields";
 import { useWorkspace } from "@/components/shell/workspace-provider";
@@ -279,6 +281,21 @@ function ProjectMenu() {
   );
 }
 
+function PlanButton() {
+  const { canEdit } = useProject();
+  const [open, setOpen] = useState(false);
+  if (!canEdit) return null;
+  return (
+    <>
+      <Button variant="ai" size="sm" onClick={() => setOpen(true)}>
+        <Sparkles /> <span className="hidden sm:inline">Plan with AI</span>
+        <span className="sr-only sm:hidden">Plan tasks with AI</span>
+      </Button>
+      {open && <PlanDialog open={open} onOpenChange={setOpen} />}
+    </>
+  );
+}
+
 export function ProjectToolbar() {
   const { project, basePath, filters, setFilters, allTasks, tasks } = useProject();
   const pathname = usePathname();
@@ -298,6 +315,7 @@ export function ProjectToolbar() {
         </h1>
         <div className="ml-auto flex items-center gap-2">
           <ProjectMenu />
+          <PlanButton />
           <NewTaskDialog />
         </div>
       </div>

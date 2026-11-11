@@ -348,3 +348,58 @@ export async function removeDependency(input: {
   if (error) return fail(message(error));
   return { ok: true, data: null };
 }
+
+/** Adds the tasks drafted from a brief, in one round trip. */
+export async function createPlannedTasks(input: {
+  projectId: string;
+  statusId: string | null;
+  sprintId: string | null;
+  tasks: {
+    title: string;
+    priority: "low" | "medium" | "high" | "urgent";
+    estimate: number | null;
+    labelIds: string[];
+  }[];
+}): Promise<Result<number>> {
+  const p = z
+    .object({
+      projectId: uuid,
+      statusId: uuid.nullable(),
+      sprintId: uuid.nullable(),
+      tasks: z
+        .array(
+          z.object({
+            title: z.string().trim().min(1).max(300),
+            priority: z.enum(["low", "medium", "high", "urgent"]),
+            estimate: z.number().int().min(0).max(100).nullable(),
+            labelIds: z.array(uuid).max(10),
+          }),
+        )
+        .min(1, "Pick at least one task.")
+        .max(20),
+    })
+    .safeParse(input);
+  if (!p.success) return fail(p.error.issues[0]?.message ?? "Invalid tasks.");
+  const supabase = await createClient();
+  // Ids are generated here so labels can be attached without reading the new rows back.
+  const rows = p.data.tasks.map((t) => ({ ...t, id: crypto.randomUUID() }));
+  const { error } = await supabase.from("tasks").insert(
+    rows.map((t) => ({
+      id: t.id,
+      project_id: p.data.projectId,
+      status_id: p.data.statusId ?? undefined,
+      sprint_id: p.data.sprintId,
+      title: t.title,
+      priority: t.priority,
+      estimate: t.estimate,
+      source: "ai",
+    })),
+  );
+  if (error) return fail(message(error));
+  const labels = rows.flatMap((t) => t.labelIds.map((label_id) => ({ task_id: t.id, label_id })));
+  if (labels.length) {
+    const { error: labelError } = await supabase.from("task_labels").insert(labels);
+    if (labelError) return fail(message(labelError));
+  }
+  return { ok: true, data: rows.length };
+}

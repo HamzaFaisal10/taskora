@@ -1,5 +1,6 @@
 import "server-only";
 import { richTextToPlain } from "@/lib/rich-text";
+import { demoPlan, type PlanIdea } from "./plan";
 import { format, parseISO } from "date-fns";
 
 /**
@@ -211,4 +212,28 @@ export async function draftDescription(
     `Write a clear task description in plain text: one line with the goal, then "Acceptance criteria:" with 3-5 bullet points starting with "- ", then one line on what is out of scope. Keep it under 120 words. Return {"description": "..."}.\n\nTask: ${describe(t)}`,
   );
   return { mode: "live", description: String(out.description ?? "").slice(0, 4000) };
+}
+
+/** Turns a brief into tasks. Demo mode uses the rule-based planner in ./plan. */
+export async function planFromBrief(
+  brief: string,
+  labelNames: string[],
+): Promise<{ mode: AiMode; ideas: PlanIdea[] }> {
+  if (aiMode() === "demo") return { mode: "demo", ideas: demoPlan(brief, labelNames) };
+  const out = await openai<{ tasks: PlanIdea[] }>(
+    SYSTEM,
+    `Turn this project brief into 4-12 tasks a product team can pick up. Each task has "title" (imperative, under 80 characters, no ticket prefix), "priority" ("low", "medium", "high" or "urgent", from the brief's wording), "estimate" (story points: 1, 2, 3, 5 or 8) and "labels" (only names from this list, may be empty: ${JSON.stringify(labelNames)}). Skip greetings and background. Return {"tasks": [...]}.\n\nBrief:\n${brief}`,
+  );
+  const allowed = new Set(labelNames);
+  return {
+    mode: "live",
+    ideas: (out.tasks ?? []).slice(0, 12).map((t) => ({
+      title: String(t.title ?? "").slice(0, 120) || "Untitled task",
+      priority: (["low", "medium", "high", "urgent"] as const).includes(t.priority)
+        ? t.priority
+        : "medium",
+      estimate: [1, 2, 3, 5, 8].includes(t.estimate) ? t.estimate : 2,
+      labels: (Array.isArray(t.labels) ? t.labels : []).filter((l) => allowed.has(l)),
+    })),
+  };
 }
