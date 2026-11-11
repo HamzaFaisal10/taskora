@@ -117,3 +117,10 @@ export async function signOut() {
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }
+
+/** From the shared demo account to the sign-up page (signs this browser out of the demo first). */
+export async function leaveDemoToSignUp() {
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/signup");
+}

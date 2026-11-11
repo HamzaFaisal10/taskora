@@ -32,6 +32,11 @@ export async function createWorkspace(
     p_slug: parsed.data.slug,
   });
   if (error) {
+    if (error.message.includes("DEMO_ACCOUNT")) {
+      return {
+        error: "The demo account can't create workspaces. Sign up for your own free account.",
+      };
+    }
     if (error.message.includes("SLUG_TAKEN") || error.code === "23505") {
       return { error: "That workspace URL is already in use.", field: "slug" };
     }

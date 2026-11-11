@@ -763,6 +763,13 @@ async function main() {
     });
   });
 
+  await test("the shared demo account can't create workspaces", async () => {
+    await rejects(
+      as(owner, () => q("select public.create_workspace('Visitor Co', 'visitor-co')")),
+      /DEMO_ACCOUNT/,
+    );
+  });
+
   await db.end();
   console.log(`\n${passed} passed, ${failures.length} failed`);
   if (failures.length) process.exit(1);

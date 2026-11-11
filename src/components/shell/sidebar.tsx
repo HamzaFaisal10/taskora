@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { clock } from "@/components/time/format";
 import { useElapsed } from "@/components/time/use-elapsed";
 import { stopTimer } from "@/lib/time-actions";
-import { signOut } from "@/app/(auth)/actions";
+import { leaveDemoToSignUp, signOut } from "@/app/(auth)/actions";
 import { LogoMark } from "@/components/brand/logo";
 import { THEME_OPTIONS } from "@/components/theme";
 import { Avatar } from "@/components/ui/avatar";
@@ -60,6 +60,8 @@ function NavLink({
 
 function WorkspaceSwitcher() {
   const { workspace, workspaces } = useWorkspace();
+  const isDemoAccount = workspaces.some((w) => w.isDemo);
+  const [, startLeaving] = useTransition();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="rounded-control hover:bg-elevated flex h-10 w-full min-w-0 items-center gap-2.5 px-2 text-left transition-colors outline-none">
@@ -84,11 +86,23 @@ function WorkspaceSwitcher() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/onboarding">
-            <Plus /> Create workspace
-          </Link>
-        </DropdownMenuItem>
+        {isDemoAccount ? (
+          // The demo account is shared by every visitor, so new workspaces need a real account.
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              startLeaving(() => leaveDemoToSignUp());
+            }}
+          >
+            <Plus /> Create your own account
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild>
+            <Link href="/onboarding">
+              <Plus /> Create workspace
+            </Link>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
