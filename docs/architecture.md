@@ -142,13 +142,35 @@ All dates are relative to **today**, so the demo always looks current. It runs o
 - **Goals** are measured by key results. A goal's progress is the average of its key results, and a key
   result can go up or down (for example "first reply time: 9h → 4h").
 
-## 8. Keeping the demo fresh
+## 8. AI assistant and analytics
+
+- **AI in the task panel:** break a task into subtasks, summarize where it stands, or draft a description.
+  `src/lib/ai/engine.ts` calls OpenAI when `OPENAI_API_KEY` is set. Without a key it runs in **demo mode**:
+  it picks a playbook from the task's title and labels and summarizes from the task's real status, owner,
+  blockers and latest comment. Demo answers carry a "Demo AI" badge, so nobody mistakes them for a model.
+- Every request costs one AI credit, charged inside the database by `use_ai_credits()` (Free 20, Pro 200
+  per month), so the limit can't be bypassed from the browser.
+- **Analytics** (`/w/<slug>/analytics`) loads the workspace's top-level tasks once and computes everything
+  in `src/lib/analytics/compute.ts` (pure functions with unit tests): 30-day KPIs against the 30 days
+  before, created vs completed per week, median cycle time, open work per person and project progress.
+  Chart colours are validated for contrast in both themes; every chart has a legend, hover details and a
+  table view.
+
+### Keeping it fast
+
+- Reads that the panel and the AI need go through GET/POST route handlers (`/api/tasks/...`, `/api/ai`)
+  instead of server actions, because Next.js runs server actions one at a time.
+- Edits update the screen optimistically and don't re-render the whole project on the server.
+- The task panel opens instantly with what the board already knows (`?task=` is a shallow URL change),
+  then fills in comments, subtasks and history.
+
+## 9. Keeping the demo fresh
 
 `/api/cron/reset-demo` runs every night from Vercel Cron (`vercel.json`) and only answers requests that
 carry `CRON_SECRET`. A GitHub Actions workflow (`keepalive.yml`) also pings `/api/health` daily so the free
 Supabase project never pauses for inactivity.
 
-## 9. Testing
+## 10. Testing
 
 `npm run db:test` creates a fresh Postgres database, applies every migration and checks, among others:
 
