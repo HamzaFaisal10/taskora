@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { Bell, CheckCircle2, FolderKanban } from "lucide-react";
 import Link from "next/link";
+import { NewProjectButton } from "@/components/shell/new-project";
 import { PageHeader } from "@/components/shell/page-header";
 import { TaskGroup } from "@/components/tasks/task-list";
 import { Card, EmptyState } from "@/components/ui/surface";
@@ -93,7 +94,12 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
           <h2 className="mb-3 text-[13px] font-medium">Projects</h2>
           {projects.length === 0 ? (
             <Card>
-              <EmptyState icon={<FolderKanban />} title="No projects yet" />
+              <EmptyState
+                icon={<FolderKanban />}
+                title="No projects yet"
+                description="Start blank or from a template with starter tasks."
+                action={<NewProjectButton />}
+              />
             </Card>
           ) : (
             <ul className="space-y-2">

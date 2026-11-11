@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
 import { settingsNav, workspaceNav } from "./nav";
+import { useNewProject } from "./new-project";
 import { useWorkspace } from "./workspace-provider";
 
 const PLAN_LABEL = { free: "Free", pro: "Pro", business: "Business" } as const;
@@ -171,6 +172,7 @@ export function Sidebar({
   onSearch: () => void;
 }) {
   const { workspace, projects, unreadCount } = useWorkspace();
+  const newProject = useNewProject();
   const pathname = usePathname();
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -227,11 +229,30 @@ export function Sidebar({
           </section>
         )}
         <section>
-          <h2 className="text-subtle px-2 pb-1 text-[11px] font-medium tracking-wide uppercase">
-            Projects
-          </h2>
+          <div className="flex items-center justify-between pr-1">
+            <h2 className="text-subtle px-2 pb-1 text-[11px] font-medium tracking-wide uppercase">
+              Projects
+            </h2>
+            {workspace.role !== "guest" && (
+              <button
+                type="button"
+                onClick={newProject}
+                className="text-subtle hover:text-fg hover:bg-elevated -mt-1 rounded p-1"
+                aria-label="New project"
+                title="New project"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            )}
+          </div>
           {projects.length === 0 && (
-            <p className="text-subtle px-2 py-1 text-[13px]">No projects yet.</p>
+            <button
+              type="button"
+              onClick={newProject}
+              className="text-muted hover:text-fg hover:bg-elevated rounded-control flex h-8 w-full items-center gap-2 px-2 text-left text-[13px]"
+            >
+              <Plus className="size-4" aria-hidden /> Create your first project
+            </button>
           )}
           {projects.map((p) => (
             <NavLink

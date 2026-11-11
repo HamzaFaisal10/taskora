@@ -608,6 +608,18 @@ async function main() {
     });
   });
 
+  await test("members create projects and get the default columns", async () => {
+    await as(ZAIN, async () => {
+      const id = "11111111-1111-4111-8111-111111111111";
+      await q(
+        "insert into public.projects (id, workspace_id, key, name, created_by) values ($1, $2, 'NEWP', 'New project', $3)",
+        [id, demoWs, ZAIN],
+      );
+      const statuses = await q("select 1 from public.task_statuses where project_id = $1", [id]);
+      assert.equal(statuses.length, 7);
+    });
+  });
+
   console.log("\nPlans & billing");
 
   await test("Free workspaces stop at 3 projects", async () => {

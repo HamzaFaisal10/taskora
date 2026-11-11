@@ -3,11 +3,12 @@
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { CornerDownLeft, FolderKanban, Search } from "lucide-react";
+import { CornerDownLeft, FolderKanban, FolderPlus, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { THEME_OPTIONS } from "@/components/theme";
 import { cn } from "@/lib/utils";
 import { workspaceNav, settingsNav } from "./nav";
+import { useNewProject } from "./new-project";
 import { useWorkspace } from "./workspace-provider";
 
 type Command = {
@@ -29,6 +30,7 @@ export function CommandPalette({
   const { workspace, workspaces, projects } = useWorkspace();
   const router = useRouter();
   const { setTheme } = useTheme();
+  const newProject = useNewProject();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -36,6 +38,17 @@ export function CommandPalette({
   const commands = useMemo<Command[]>(() => {
     const go = (href: string) => () => router.push(href);
     return [
+      ...(workspace.role !== "guest"
+        ? [
+            {
+              id: "new-project",
+              group: "Create",
+              label: "New project",
+              icon: FolderPlus,
+              run: () => newProject(),
+            },
+          ]
+        : []),
       ...workspaceNav(workspace.slug).map((n) => ({
         id: n.href,
         group: "Go to",
@@ -77,7 +90,7 @@ export function CommandPalette({
         run: () => setTheme(t.value),
       })),
     ];
-  }, [workspace, workspaces, projects, router, setTheme]);
+  }, [workspace, workspaces, projects, router, setTheme, newProject]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

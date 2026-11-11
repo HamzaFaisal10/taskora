@@ -1,21 +1,29 @@
 "use client";
 
 import {
+  Archive,
   CalendarDays,
   Columns3,
   FileText,
   GanttChart,
   List,
   ListFilter,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Rocket,
   Search,
+  Star,
   Workflow,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { ProjectDialog } from "@/components/shell/new-project";
+import { useWorkspace } from "@/components/shell/workspace-provider";
+import { archiveProject, setFavorite } from "@/lib/project/project-actions";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,6 +198,70 @@ function NewTaskDialog() {
   );
 }
 
+function ProjectMenu() {
+  const { project, canEdit } = useProject();
+  const { workspace, projects } = useWorkspace();
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [pending, start] = useTransition();
+  const favorite = projects.find((p) => p.id === project.id)?.favorite ?? false;
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label="Project options" disabled={pending}>
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem
+            onSelect={() =>
+              start(async () => {
+                const res = await setFavorite({
+                  slug: workspace.slug,
+                  projectId: project.id,
+                  favorite: !favorite,
+                });
+                if (!res.ok) toast.error(res.error);
+              })
+            }
+          >
+            <Star className={cn(favorite && "!text-warning fill-current")} />{" "}
+            {favorite ? "Remove from favorites" : "Add to favorites"}
+          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => setEditing(true)}>
+              <Pencil /> Edit project
+            </DropdownMenuItem>
+          )}
+          {canEdit && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                onSelect={() =>
+                  start(async () => {
+                    const res = await archiveProject({
+                      slug: workspace.slug,
+                      projectId: project.id,
+                    });
+                    if (!res.ok) return void toast.error(res.error);
+                    toast.success(`${project.name} archived`);
+                    router.push(`/w/${workspace.slug}`);
+                  })
+                }
+              >
+                <Archive /> Archive project
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {editing && <ProjectDialog open={editing} onOpenChange={setEditing} project={project} />}
+    </>
+  );
+}
+
 export function ProjectToolbar() {
   const { project, basePath, filters, setFilters, allTasks, tasks } = useProject();
   const pathname = usePathname();
@@ -208,6 +280,7 @@ export function ProjectToolbar() {
           <span className="text-subtle font-mono text-xs font-normal">{project.key}</span>
         </h1>
         <div className="ml-auto flex items-center gap-2">
+          <ProjectMenu />
           <NewTaskDialog />
         </div>
       </div>
