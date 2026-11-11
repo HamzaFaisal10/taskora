@@ -15,6 +15,7 @@ export type Label = { id: string; name: string; tone: string };
 export type Sprint = {
   id: string;
   name: string;
+  goal: string;
   state: "planned" | "active" | "completed";
   startDate: string;
   endDate: string;

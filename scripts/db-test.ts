@@ -476,6 +476,133 @@ async function main() {
     );
   });
 
+  console.log("\nAutomations");
+
+  const statusOf = async (project: string, category: string) =>
+    (
+      await one<{ id: string }>(
+        "select id from public.task_statuses where project_id = $1 and category = $2 order by position limit 1",
+        [project, category],
+      )
+    ).id;
+
+  await test("moving a task to Review runs the matching rule", async () => {
+    await as(ZAIN, async () => {
+      const task = await one<{ id: string }>(
+        "insert into public.tasks (project_id, title, assignee_id) values ($1, 'Polish settings screen', $2) returning id",
+        [MOB, ZAIN],
+      );
+      await q("update public.tasks set status_id = $2 where id = $1", [
+        task.id,
+        await statusOf(MOB, "review"),
+      ]);
+      const after = await one<{ assignee_id: string }>(
+        "select assignee_id from public.tasks where id = $1",
+        [task.id],
+      );
+      assert.equal(after.assignee_id, SARA, "the Review rule assigns Sara");
+      const ran = await q(
+        "select 1 from public.activity where task_id = $1 and action = 'automation_ran'",
+        [task.id],
+      );
+      assert.equal(ran.length, 1);
+    });
+  });
+
+  await test("completing a task completes its subtasks", async () => {
+    await as(ZAIN, async () => {
+      const parent = await one<{ id: string }>(
+        "insert into public.tasks (project_id, title) values ($1, 'Ship release 2.1') returning id",
+        [MOB],
+      );
+      await q(
+        "insert into public.tasks (project_id, title, parent_id) values ($1, 'Write changelog', $2), ($1, 'Tag build', $2)",
+        [MOB, parent.id],
+      );
+      await q("update public.tasks set status_id = $2 where id = $1", [
+        parent.id,
+        await statusOf(MOB, "completed"),
+      ]);
+      const open = await q(
+        `select 1 from public.tasks t join public.task_statuses s on s.id = t.status_id
+         where t.parent_id = $1 and s.category <> 'completed'`,
+        [parent.id],
+      );
+      assert.equal(open.length, 0);
+    });
+  });
+
+  await test("disabled rules and other projects are left alone", async () => {
+    await as(ZAIN, async () => {
+      const web = await projectId("WEB");
+      const task = await one<{ id: string }>(
+        "insert into public.tasks (project_id, title, assignee_id) values ($1, 'Footer links', $2) returning id",
+        [web, ZAIN],
+      );
+      await q("update public.tasks set status_id = $2 where id = $1", [
+        task.id,
+        await statusOf(web, "review"),
+      ]);
+      const after = await one<{ assignee_id: string }>(
+        "select assignee_id from public.tasks where id = $1",
+        [task.id],
+      );
+      assert.equal(after.assignee_id, ZAIN);
+    });
+  });
+
+  await test("a rule that moves a task cannot trigger itself in a loop", async () => {
+    await as(owner, async () => {
+      await q(
+        `insert into public.automations (project_id, name, trigger, actions)
+         values ($1, 'Bounce', '{"type": "status_changed", "to_category": "started"}', '[{"type": "move_to_category", "category": "review"}]'),
+                ($1, 'Bounce back', '{"type": "status_changed", "to_category": "review"}', '[{"type": "move_to_category", "category": "started"}]')`,
+        [MOB],
+      );
+      const task = await one<{ id: string }>(
+        "insert into public.tasks (project_id, title) values ($1, 'Loop check') returning id",
+        [MOB],
+      );
+      await q("update public.tasks set status_id = $2 where id = $1", [
+        task.id,
+        await statusOf(MOB, "started"),
+      ]);
+      const after = await one<{ category: string }>(
+        "select s.category from public.tasks t join public.task_statuses s on s.id = t.status_id where t.id = $1",
+        [task.id],
+      );
+      assert.equal(after.category, "review");
+    });
+  });
+
+  await test("scheduled rules raise priority on tasks due tomorrow, once", async () => {
+    await as("service", async () => {
+      const task = await one<{ id: string }>(
+        "insert into public.tasks (project_id, title, priority, due_date) values ($1, 'Renew certificates', 'low', current_date + 1) returning id",
+        [MOB],
+      );
+      const first = await one<{ n: number }>("select public.run_scheduled_automations() as n");
+      assert.ok(first.n >= 1);
+      const after = await one<{ priority: string }>(
+        "select priority from public.tasks where id = $1",
+        [task.id],
+      );
+      assert.equal(after.priority, "high");
+      await q("select public.run_scheduled_automations()");
+      const runs = await q(
+        "select 1 from public.activity where task_id = $1 and action = 'automation_ran'",
+        [task.id],
+      );
+      assert.equal(runs.length, 1);
+    });
+  });
+
+  await test("only the server runs scheduled rules", async () => {
+    await as(ZAIN, async () => {
+      await rejects(q("select public.run_scheduled_automations()"), /permission denied/);
+    });
+  });
+
   console.log("\nPlans & billing");
 
   await test("Free workspaces stop at 3 projects", async () => {

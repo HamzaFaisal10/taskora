@@ -3,11 +3,14 @@
 import {
   CalendarDays,
   Columns3,
+  FileText,
   GanttChart,
   List,
   ListFilter,
   Plus,
+  Rocket,
   Search,
+  Workflow,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -42,7 +45,13 @@ const VIEWS = [
   { slug: "list", label: "List", icon: List },
   { slug: "calendar", label: "Calendar", icon: CalendarDays },
   { slug: "timeline", label: "Timeline", icon: GanttChart },
+  { slug: "sprints", label: "Sprints", icon: Rocket },
+  { slug: "automations", label: "Automations", icon: Workflow },
+  { slug: "forms", label: "Forms", icon: FileText },
 ];
+
+// Search and filters only make sense on the task views.
+const TASK_VIEWS = new Set(["", "list", "calendar", "timeline"]);
 
 function toggle(list: string[], v: string) {
   return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -226,24 +235,26 @@ export function ProjectToolbar() {
             );
           })}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <div className="relative">
-            <Search
-              className="text-subtle pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
-              aria-hidden
-            />
-            <input
-              value={filters.q}
-              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-              placeholder="Search tasks"
-              aria-label="Search tasks"
-              className="border-border bg-card focus:border-accent rounded-control h-8 w-36 border pr-2 pl-8 text-[13px] outline-none sm:w-48"
-            />
+        {TASK_VIEWS.has(current) && (
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <Search
+                className="text-subtle pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+                aria-hidden
+              />
+              <input
+                value={filters.q}
+                onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                placeholder="Search tasks"
+                aria-label="Search tasks"
+                className="border-border bg-card focus:border-accent rounded-control h-8 w-36 border pr-2 pl-8 text-[13px] outline-none sm:w-48"
+              />
+            </div>
+            <FilterMenu />
           </div>
-          <FilterMenu />
-        </div>
+        )}
       </div>
-      {tasks.length !== allTasks.length && (
+      {TASK_VIEWS.has(current) && tasks.length !== allTasks.length && (
         <p className="text-subtle px-4 pb-2 text-xs sm:px-8">
           Showing {tasks.length} of {allTasks.length} tasks
         </p>

@@ -19,7 +19,9 @@ const email = (process.env.DEMO_USER_EMAIL ?? "demo@taskora.example").toLowerCas
 
 async function main() {
   if (!url || !serviceKey) {
-    throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local first.");
+    throw new Error(
+      "Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local first.",
+    );
   }
 
   const supabase = createClient(url, serviceKey, {

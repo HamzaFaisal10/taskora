@@ -589,7 +589,9 @@ function PanelBody({ detail, reload }: { detail: TaskDetail; reload: () => void 
                   aria-hidden
                 />
                 <span className="text-fg font-medium">{a.actor?.name ?? "Taskora"}</span>{" "}
-                {ACTIVITY[a.action] ?? a.action.replace(/_/g, " ")}
+                {a.action === "automation_ran"
+                  ? `ran the “${String(a.meta.name ?? "automation")}” automation`
+                  : (ACTIVITY[a.action] ?? a.action.replace(/_/g, " "))}
                 <span className="text-subtle"> · {ago(a.createdAt)}</span>
               </li>
             ))}

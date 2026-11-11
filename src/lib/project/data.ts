@@ -60,7 +60,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
     supabase.from("labels").select("id, name, tone").eq("workspace_id", workspace.id).order("name"),
     supabase
       .from("sprints")
-      .select("id, name, state, start_date, end_date")
+      .select("id, name, goal, state, start_date, end_date")
       .eq("project_id", project.id)
       .order("start_date"),
   ]);
@@ -133,6 +133,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
       (sprints.data ?? []) as {
         id: string;
         name: string;
+        goal: string;
         state: Sprint["state"];
         start_date: string;
         end_date: string;
@@ -140,6 +141,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
     ).map((s) => ({
       id: s.id,
       name: s.name,
+      goal: s.goal,
       state: s.state,
       startDate: s.start_date,
       endDate: s.end_date,
