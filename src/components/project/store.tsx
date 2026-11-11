@@ -12,6 +12,7 @@ import {
   type TaskPatch,
 } from "@/lib/project/actions";
 import type { BoardTask, ProjectData, Status } from "@/lib/project/types";
+import { useLive } from "@/lib/realtime/use-live";
 
 export type Filters = { q: string; assignees: string[]; priorities: string[]; labels: string[] };
 const EMPTY: Filters = { q: "", assignees: [], priorities: [], labels: [] };
@@ -133,6 +134,17 @@ export function ProjectProvider({
       });
     },
     [tasks],
+  );
+
+  // Teammates' changes stream in and refresh the project (debounced, so a burst becomes one refresh).
+  useLive(
+    `project:${data.project.id}`,
+    [
+      { table: "tasks", filter: `project_id=eq.${data.project.id}` },
+      { table: "task_statuses", filter: `project_id=eq.${data.project.id}` },
+    ],
+    () => router.refresh(),
+    600,
   );
 
   const store: Store = {

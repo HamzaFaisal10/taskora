@@ -2,7 +2,8 @@
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Menu, Search } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useLive } from "@/lib/realtime/use-live";
 import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,15 @@ export function AppShell({
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // New notifications update the Inbox badge live.
+  useLive(
+    `inbox:${value.viewer.id}`,
+    [{ table: "notifications", filter: `user_id=eq.${value.viewer.id}` }],
+    () => router.refresh(),
+    800,
+  );
 
   useEffect(() => {
     document.cookie = `taskora-ws=${value.workspace.slug}; path=/; max-age=31536000; samesite=lax`;

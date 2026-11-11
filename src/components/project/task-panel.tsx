@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/surface";
 import { addComment } from "@/lib/project/actions";
+import { useLive } from "@/lib/realtime/use-live";
 import { AiAssist } from "./ai-assist";
 import { BlockersSection } from "./blockers";
 import { CommentBody, MentionInput, Reactions } from "./comments";
@@ -693,6 +694,15 @@ export function TaskPanel() {
       cancelled = true;
     };
   }, [number, project.id, apply, allTasks]);
+
+  // New comments from teammates appear while the panel is open.
+  const liveTaskId = detail?.id;
+  useLive(
+    `task:${liveTaskId ?? "none"}`,
+    liveTaskId ? [{ table: "comments", filter: `task_id=eq.${liveTaskId}` }] : [],
+    load,
+    300,
+  );
 
   // Open instantly with what the board already knows; comments, subtasks and history fill in after.
   const boardTask = allTasks.find((t) => t.number === number);
