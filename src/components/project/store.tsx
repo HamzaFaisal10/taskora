@@ -5,6 +5,8 @@ import { createContext, useCallback, useContext, useMemo, useState, useTransitio
 import { toast } from "sonner";
 import {
   archiveTask,
+  archiveTasks,
+  bulkUpdateTasks,
   createTask,
   moveTask,
   setTaskLabels,
@@ -44,6 +46,11 @@ type Store = ProjectData & {
   refresh: () => void;
   setLabels: (taskId: string, labelIds: string[]) => void;
   archive: (taskId: string) => void;
+  bulkUpdate: (
+    taskIds: string[],
+    patch: Pick<TaskPatch, "statusId" | "priority" | "assigneeId" | "sprintId" | "dueDate">,
+  ) => void;
+  bulkArchive: (taskIds: string[]) => void;
   pending: boolean;
 };
 
@@ -197,6 +204,30 @@ export function ProjectProvider({
       run(
         (prev) => prev.map((t) => (t.id === taskId ? { ...t, labelIds } : t)),
         () => setTaskLabels({ path: basePath, taskId, labelIds }),
+      );
+    },
+    bulkUpdate: (taskIds, patch) => {
+      const ids = new Set(taskIds);
+      run(
+        (prev) =>
+          prev.map((t) => {
+            if (!ids.has(t.id)) return t;
+            const next = { ...t };
+            for (const [k, v] of Object.entries(patch)) {
+              const field = PATCH_TO_TASK[k as keyof TaskPatch];
+              if (field) (next as Record<string, unknown>)[field] = v;
+            }
+            return next;
+          }),
+        () => bulkUpdateTasks({ path: basePath, taskIds, patch }),
+        !!patch.statusId && statusById.get(patch.statusId)?.category === "completed",
+      );
+    },
+    bulkArchive: (taskIds) => {
+      const ids = new Set(taskIds);
+      run(
+        (prev) => prev.filter((t) => !ids.has(t.id)),
+        () => archiveTasks({ path: basePath, taskIds }),
       );
     },
     archive: (taskId) => {

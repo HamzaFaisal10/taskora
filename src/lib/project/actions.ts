@@ -403,3 +403,114 @@ export async function createPlannedTasks(input: {
   }
   return { ok: true, data: rows.length };
 }
+
+const idList = z.array(uuid).min(1).max(500);
+
+/** Applies the same change to several tasks at once (list view bulk edit). */
+export async function bulkUpdateTasks(input: {
+  path: string;
+  taskIds: string[];
+  patch: Pick<TaskPatch, "statusId" | "priority" | "assigneeId" | "sprintId" | "dueDate">;
+}): Promise<Result<number>> {
+  const ids = idList.safeParse(input.taskIds);
+  const patch = patchSchema
+    .pick({ statusId: true, priority: true, assigneeId: true, sprintId: true, dueDate: true })
+    .safeParse(input.patch);
+  if (!ids.success || !patch.success || !Object.keys(patch.data).length)
+    return fail("Invalid change.");
+  const row: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch.data)) row[COLUMNS[k as keyof TaskPatch]] = v;
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("tasks")
+    .update(row, { count: "exact" })
+    .in("id", ids.data);
+  if (error)
+    return fail(
+      /due_date/.test(error.message)
+        ? "Some tasks start after that due date. Change their start dates first."
+        : message(error),
+    );
+  return { ok: true, data: count ?? ids.data.length };
+}
+
+export async function archiveTasks(input: {
+  path: string;
+  taskIds: string[];
+}): Promise<Result<number>> {
+  const ids = idList.safeParse(input.taskIds);
+  if (!ids.success) return fail("Invalid tasks.");
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("tasks")
+    .update({ archived_at: new Date().toISOString() }, { count: "exact" })
+    .in("id", ids.data);
+  if (error) return fail(message(error));
+  return { ok: true, data: count ?? ids.data.length };
+}
+
+/** Creates tasks from an imported CSV file (already matched to statuses, people and labels). */
+export async function importTasks(input: {
+  projectId: string;
+  tasks: {
+    title: string;
+    description: string;
+    statusId: string | null;
+    priority: "none" | "low" | "medium" | "high" | "urgent";
+    assigneeId: string | null;
+    dueDate: string | null;
+    estimate: number | null;
+    labelIds: string[];
+  }[];
+}): Promise<Result<number>> {
+  const p = z
+    .object({
+      projectId: uuid,
+      tasks: z
+        .array(
+          z.object({
+            title: z.string().trim().min(1).max(300),
+            description: z.string().max(50000),
+            statusId: uuid.nullable(),
+            priority: z.enum(["none", "low", "medium", "high", "urgent"]),
+            assigneeId: uuid.nullable(),
+            dueDate: date,
+            estimate: z.number().int().min(0).max(100).nullable(),
+            labelIds: z.array(uuid).max(10),
+          }),
+        )
+        .min(1, "There are no tasks to import.")
+        .max(500, "Import up to 500 tasks at a time."),
+    })
+    .safeParse(input);
+  if (!p.success) return fail(p.error.issues[0]?.message ?? "Invalid import.");
+  const supabase = await createClient();
+  const rows = p.data.tasks.map((t) => ({ ...t, id: crypto.randomUUID() }));
+  // Insert in chunks so one request never gets too large.
+  for (let i = 0; i < rows.length; i += 100) {
+    const chunk = rows.slice(i, i + 100);
+    const { error } = await supabase.from("tasks").insert(
+      chunk.map((t) => ({
+        id: t.id,
+        project_id: p.data.projectId,
+        title: t.title,
+        description: t.description,
+        status_id: t.statusId ?? undefined,
+        priority: t.priority,
+        assignee_id: t.assigneeId,
+        due_date: t.dueDate,
+        estimate: t.estimate,
+        source: "import",
+      })),
+    );
+    if (error)
+      return fail(
+        i === 0 ? message(error) : `Imported ${i} tasks, then stopped: ${message(error)}`,
+      );
+  }
+  const labels = rows.flatMap((t) => t.labelIds.map((label_id) => ({ task_id: t.id, label_id })));
+  for (let i = 0; i < labels.length; i += 500) {
+    await supabase.from("task_labels").insert(labels.slice(i, i + 500));
+  }
+  return { ok: true, data: rows.length };
+}
