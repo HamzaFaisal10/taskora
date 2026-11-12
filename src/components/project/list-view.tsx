@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { plural } from "@/lib/plural";
 import { DueLabel } from "@/components/tasks/due-label";
 import {
   PRIORITY_META,
@@ -180,7 +182,7 @@ function Row({
 
 /** The bar that appears while tasks are selected: change status, priority, assignee or due date, or archive. */
 function BulkBar({ ids, onClear }: { ids: string[]; onClear: () => void }) {
-  const { statuses, people, sprints, bulkUpdate, bulkArchive } = useProject();
+  const { statuses, people, sprints, bulkUpdate, bulkArchive, restoreMany } = useProject();
   const [due, setDue] = useState("");
   const n = ids.length;
   const trigger = "h-8 gap-1.5 px-2.5 text-[13px]";
@@ -292,8 +294,19 @@ function BulkBar({ ids, onClear }: { ids: string[]; onClear: () => void }) {
         size="sm"
         className={cn(trigger, "hover:text-danger-text")}
         onClick={() => {
-          bulkArchive(ids);
+          const archived = [...ids];
+          bulkArchive(archived);
           onClear();
+          toast.success(`${plural(archived.length, "task")} archived`, {
+            duration: 8000,
+            action: {
+              label: "Undo",
+              onClick: () =>
+                void restoreMany(archived).then(
+                  (ok) => ok && toast.success(`${plural(archived.length, "task")} restored`),
+                ),
+            },
+          });
         }}
       >
         <Archive className="size-3.5" /> Archive

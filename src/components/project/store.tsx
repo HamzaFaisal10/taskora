@@ -1,7 +1,15 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, useCallback, useContext, useMemo, useState, useTransition } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import {
   archiveTask,
@@ -49,6 +57,7 @@ type Store = ProjectData & {
   archive: (taskId: string) => void;
   /** Bring an archived task back onto the board. Resolves to whether it worked. */
   restore: (taskId: string) => Promise<boolean>;
+  restoreMany: (taskIds: string[]) => Promise<boolean>;
   bulkUpdate: (
     taskIds: string[],
     patch: Pick<TaskPatch, "statusId" | "priority" | "assigneeId" | "sprintId" | "dueDate">,
@@ -96,6 +105,8 @@ export function ProjectProvider({
   // Local copy for optimistic updates; replaced whenever the server sends fresh data.
   const [source, setSource] = useState(data);
   const [tasks, setTasks] = useState(data.tasks);
+  // Archives still being saved, so an Undo can wait for them.
+  const archiving = useRef(new Map<string, Promise<unknown>>());
   if (source !== data) {
     setSource(data);
     setTasks(data.tasks);
@@ -230,22 +241,45 @@ export function ProjectProvider({
       const ids = new Set(taskIds);
       run(
         (prev) => prev.filter((t) => !ids.has(t.id)),
-        () => archiveTasks({ path: basePath, taskIds }),
+        () => {
+          const saving = archiveTasks({ path: basePath, taskIds });
+          for (const id of taskIds) archiving.current.set(id, saving);
+          return saving.finally(() => taskIds.forEach((id) => archiving.current.delete(id)));
+        },
       );
     },
     archive: (taskId) => {
       run(
         (prev) => prev.filter((t) => t.id !== taskId),
-        () => archiveTask({ path: basePath, taskId }),
+        () => {
+          const saving = archiveTask({ path: basePath, taskId });
+          archiving.current.set(taskId, saving);
+          return saving.finally(() => archiving.current.delete(taskId));
+        },
       );
     },
     restore: async (taskId) => {
+      // An Undo right after archiving waits for the archive to be saved, so it can't be overwritten.
+      await archiving.current.get(taskId)?.catch(() => undefined);
       const res = await restoreTask({ path: basePath, taskId });
       if (!res.ok) {
         toast.error(res.error);
         return false;
       }
       router.refresh();
+      return true;
+    },
+    restoreMany: async (taskIds) => {
+      await Promise.all(taskIds.map((id) => archiving.current.get(id)?.catch(() => undefined)));
+      const results = await Promise.all(
+        taskIds.map((taskId) => restoreTask({ path: basePath, taskId })),
+      );
+      router.refresh();
+      const failed = results.find((r) => !r.ok);
+      if (failed && !failed.ok) {
+        toast.error(failed.error);
+        return false;
+      }
       return true;
     },
     create: async (title, opts) => {

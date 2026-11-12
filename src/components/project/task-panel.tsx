@@ -353,6 +353,7 @@ function PanelBody({
                     archive(task.id);
                     openTask(null);
                     toast.success(`${task.ref} archived`, {
+                      duration: 8000,
                       action: {
                         label: "Undo",
                         onClick: () =>
