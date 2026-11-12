@@ -26,9 +26,14 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           {viewer === "user" ? (
-            <Button asChild size="sm">
-              <Link href="/app">Open Taskora</Link>
-            </Button>
+            <>
+              <Button asChild size="sm" variant="secondary">
+                <Link href="/w/demo">Live demo</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/app">Open Taskora</Link>
+              </Button>
+            </>
           ) : (
             <>
               <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
@@ -36,7 +41,7 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
               </Button>
               {viewer === "demo" ? (
                 <Button asChild size="sm" variant="secondary">
-                  <Link href="/w/demo">Open the demo</Link>
+                  <Link href="/w/demo">Live demo</Link>
                 </Button>
               ) : (
                 <DemoButton size="sm" variant="secondary" label="Live demo" />
@@ -53,34 +58,22 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
 }
 
 /**
- * The two main actions, the same at the top and the bottom of the page. A visitor tries the demo or
- * signs up; someone with their own account opens it (the demo would sign them out, so it is a link
- * to a page that says so first).
+ * The two main actions, the same for everyone and the same at the top and the bottom of the page:
+ * try the demo, or create a workspace.
  */
 export function MainActions({ viewer }: { viewer: MarketingViewer }) {
-  if (viewer === "user") {
-    return (
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button asChild size="lg">
-          <Link href="/app">Open Taskora</Link>
-        </Button>
-        <Button asChild size="lg" variant="secondary">
-          <Link href="/w/demo">View the live demo</Link>
-        </Button>
-      </div>
-    );
-  }
   return (
     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-      {viewer === "demo" ? (
-        <Button asChild size="lg" className="sm:w-64">
-          <Link href="/w/demo">Open the demo</Link>
-        </Button>
-      ) : (
+      {viewer === "out" ? (
         <DemoButton className="sm:w-64" variant="primary" label="Try the live demo" />
+      ) : (
+        // Already in the demo: go straight back. With your own account: a page explains the switch first.
+        <Button asChild size="lg" className="sm:w-64">
+          <Link href="/w/demo">Try the live demo</Link>
+        </Button>
       )}
       <Button asChild size="lg" variant="secondary">
-        <Link href="/signup">Create a free workspace</Link>
+        <Link href={viewer === "user" ? "/onboarding" : "/signup"}>Create a free workspace</Link>
       </Button>
     </div>
   );
