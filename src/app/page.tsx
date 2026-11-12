@@ -81,9 +81,6 @@ export default async function HomePage() {
             <MainActions viewer={viewer} />
             <p className="text-subtle mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <span className="inline-flex items-center gap-1.5">
-                <Check className="text-accent-text size-3.5" aria-hidden /> Free for up to 5 people
-              </span>
-              <span className="inline-flex items-center gap-1.5">
                 <Check className="text-accent-text size-3.5" aria-hidden /> No card needed
               </span>
               <span className="inline-flex items-center gap-1.5">
