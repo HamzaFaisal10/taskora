@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { DemoButton } from "@/components/auth/forms";
-import { Logo } from "@/components/brand/logo";
+import { Logo, LogoMark } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
+import { ScreensStage } from "@/components/marketing/devices";
 import type { MarketingViewer } from "@/lib/marketing-viewer";
+import { cn } from "@/lib/utils";
 
 export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
   return (
@@ -113,17 +115,56 @@ export function MarketingFooter({ viewer }: { viewer: MarketingViewer }) {
   );
 }
 
+/**
+ * The closing call to action: a lime panel with the two main actions, and the product rising out of
+ * its bottom edge.
+ */
 export function FinalCta({ viewer }: { viewer: MarketingViewer }) {
+  // Dark buttons on the lime panel, in both themes. The light around the demo button stays white.
+  const dark =
+    "bg-[#0e0f11] text-white hover:bg-[#23262b] shadow-[0_10px_30px_-10px_rgb(0_0_0/0.5)] [--glow:rgb(255_255_255/0.9)]";
+  const light = "bg-white/85 text-[#0e0f11] hover:bg-white backdrop-blur";
   return (
-    <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-      <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-balance sm:text-[2.75rem] sm:leading-[1.1]">
-        Open the demo workspace and move a card.
-      </h2>
-      <p className="text-muted mt-4 max-w-xl text-lg">
-        Eight teammates, four projects and two months of history are waiting. No sign-up, and it
-        resets every night.
-      </p>
-      <MainActions viewer={viewer} />
+    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+      <div className="cta-bg relative overflow-hidden rounded-[32px] px-5 pt-14 text-center text-[#0e0f11] sm:px-10 sm:pt-20">
+        <LogoMark
+          size={64}
+          variant="inverse"
+          className="mx-auto rounded-[18px] shadow-[0_16px_40px_-12px_rgb(0_0_0/0.45)]"
+        />
+        <h2 className="mx-auto mt-8 max-w-3xl text-[2.4rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl">
+          Stop chasing updates.
+          <br />
+          Start shipping.
+        </h2>
+        <p className="mx-auto mt-5 max-w-xl text-lg text-[#0e0f11]/75">
+          Open the demo and move a card in ten seconds, or set up your own workspace in a minute.
+        </p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          {viewer === "out" ? (
+            <DemoButton className="sm:w-60" label="Try the live demo" glow buttonClassName={dark} />
+          ) : (
+            <Button asChild size="lg" className={cn("demo-glow sm:w-60", dark)}>
+              <Link href="/w/demo">Try the live demo</Link>
+            </Button>
+          )}
+          <Button asChild size="lg" className={light}>
+            <Link href={viewer === "user" ? "/onboarding" : "/signup"}>
+              Create a free workspace
+            </Link>
+          </Button>
+        </div>
+        <p className="mt-4 text-sm text-[#0e0f11]/65">Free for up to 5 people. No card needed.</p>
+        <div className="mt-12 sm:mt-16">
+          <ScreensStage
+            desktop="timeline"
+            phone="task"
+            path="/w/halcyon/p/MOB/timeline"
+            desktopAlt="The timeline of the Mobile App project"
+            phoneAlt="A task on a phone, with its status, assignee, dates and custom fields"
+          />
+        </div>
+      </div>
     </section>
   );
 }

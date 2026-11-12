@@ -78,27 +78,6 @@ export function BrowserFrame({
   );
 }
 
-/** A laptop: the screen in a thin bezel, sitting on a base. */
-function Laptop({ children }: { children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="relative rounded-t-[18px] border border-b-0 border-[#2a2d33] bg-[#16181c] p-[1.6%] pb-[2.2%]">
-        <span
-          className="absolute top-[0.55%] left-1/2 size-[clamp(3px,0.45vw,6px)] -translate-x-1/2 rounded-full bg-[#2b2f36]"
-          aria-hidden
-        />
-        <div className="overflow-hidden rounded-[6px]">{children}</div>
-      </div>
-      <div className="relative mx-[-6%] h-[clamp(10px,1.6vw,18px)] rounded-b-[14px] bg-gradient-to-b from-[#3a3e45] to-[#24272c]">
-        <span
-          className="absolute top-0 left-1/2 h-[40%] w-[14%] -translate-x-1/2 rounded-b-md bg-[#1a1c20]"
-          aria-hidden
-        />
-      </div>
-    </div>
-  );
-}
-
 /**
  * An iPhone: titanium rim, black bezel, the Dynamic Island in the status bar, side buttons and the home
  * indicator. Sizes are in container-width units, so it looks the same at any size.
@@ -273,25 +252,46 @@ export function ProductTour() {
   );
 }
 
-/** The same workspace on a laptop and on a phone. */
-export function Everywhere() {
+/**
+ * An app window with a phone in front of it, cropped at the bottom so both seem to rise out of the
+ * panel they sit in. The panel (background, rounded corners) is the caller's.
+ */
+export function ScreensStage({
+  desktop,
+  phone,
+  path,
+  desktopAlt,
+  phoneAlt,
+  priority = false,
+}: {
+  desktop: ShotName;
+  phone: ShotName;
+  path: string;
+  desktopAlt: string;
+  phoneAlt: string;
+  priority?: boolean;
+}) {
   return (
-    <div className="relative mx-auto max-w-5xl pr-[22%] pb-[6%] sm:pr-[18%] sm:pb-[4%]">
-      <Laptop>
-        <Shot
-          name="board"
-          device="desktop"
-          alt="The board of the Mobile App project on a laptop"
-          sizes="(min-width: 1024px) 820px, 80vw"
-        />
-      </Laptop>
-      <div className="absolute right-0 bottom-0 w-[34%] sm:w-[22%]">
+    <div className="relative mx-auto max-w-5xl">
+      <BrowserFrame path={path} className="rounded-b-none border-b-0">
+        <div className="aspect-[1920/1040] overflow-hidden">
+          <Shot
+            name={desktop}
+            device="desktop"
+            alt={desktopAlt}
+            priority={priority}
+            sizes="(min-width: 1152px) 1024px, 92vw"
+          />
+        </div>
+      </BrowserFrame>
+      <div className="absolute right-[-2%] bottom-[-16%] w-[27%] max-w-[250px] sm:right-[3%] sm:w-[22%]">
         <Phone>
           <Shot
-            name="home"
+            name={phone}
             device="phone"
-            alt="Home on a phone: tasks assigned to you, overdue work and unread updates"
-            sizes="(min-width: 1024px) 220px, 34vw"
+            alt={phoneAlt}
+            priority={priority}
+            sizes="(min-width: 1024px) 250px, 27vw"
           />
         </Phone>
       </div>

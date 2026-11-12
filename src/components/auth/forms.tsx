@@ -10,6 +10,7 @@ import {
   updatePassword,
   type AuthState,
 } from "@/app/(auth)/actions";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/input";
 import { Separator } from "@/components/ui/surface";
@@ -69,6 +70,7 @@ export function DemoButton({
   label = "Try the live demo — no sign-up",
   size = "lg",
   glow = false,
+  buttonClassName,
 }: {
   className?: string;
   variant?: "ai" | "primary" | "secondary";
@@ -76,6 +78,7 @@ export function DemoButton({
   size?: "sm" | "lg";
   /** A soft light that travels around the border. */
   glow?: boolean;
+  buttonClassName?: string;
 }) {
   return (
     <form action="/api/demo" method="post" className={className}>
@@ -83,7 +86,7 @@ export function DemoButton({
         type="submit"
         variant={variant}
         size={size}
-        className={glow ? "demo-glow w-full" : "w-full"}
+        className={cn("w-full", glow && "demo-glow", buttonClassName)}
       >
         {label}
       </Button>

@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import {
   FinalCta,
@@ -6,7 +6,7 @@ import {
   MarketingFooter,
   MarketingNav,
 } from "@/components/marketing/chrome";
-import { Everywhere, ProductTour } from "@/components/marketing/devices";
+import { ProductTour, ScreensStage } from "@/components/marketing/devices";
 import { Faq, PricingPlans } from "@/components/marketing/pricing";
 import {
   AiVisual,
@@ -48,20 +48,62 @@ export default async function HomePage() {
     <>
       <MarketingNav viewer={viewer} />
       <main>
-        {/* Hero: two lines, one sentence and the two main actions. The product is shown right below. */}
-        <section className="mx-auto max-w-6xl px-4 pt-20 pb-20 sm:px-6 sm:pt-28 sm:pb-24">
-          <h1 className="from-fg to-fg/60 max-w-4xl bg-gradient-to-b bg-clip-text pb-1 text-[2.9rem] leading-[1.02] font-semibold tracking-[-0.045em] text-transparent sm:text-7xl lg:text-[5.25rem]">
-            Plan the sprint.
-            <br />
-            Ship the work.
-          </h1>
-          <p className="text-muted mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">
-            Tasks, sprints and client requests in one fast workspace. Free for up to five people.
-          </p>
-          <MainActions viewer={viewer} />
-          <p className="text-subtle mt-4 text-sm">
-            No sign-up for the demo. It resets every night.
-          </p>
+        {/* Hero: a short pitch and the two main actions, then the product itself on a coloured panel. */}
+        <section className="relative isolate overflow-hidden">
+          <div className="hero-grid pointer-events-none absolute inset-0 -z-10" aria-hidden />
+          <div
+            className="bg-accent/20 dark:bg-accent/12 pointer-events-none absolute -top-48 right-[-12%] -z-10 size-[640px] rounded-full blur-[130px]"
+            aria-hidden
+          />
+          <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-24">
+            <Link
+              href="#features"
+              className="border-border bg-surface/80 text-fg-2 hover:text-fg hover:border-accent-border group inline-flex items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-[13px] backdrop-blur transition-colors"
+            >
+              <span className="bg-accent text-accent-fg rounded-full px-2 py-0.5 text-xs font-semibold">
+                New
+              </span>
+              AI turns a one-line brief into a plan
+              <ChevronRight
+                className="text-subtle size-3.5 transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
+            </Link>
+            <h1 className="from-fg to-fg/65 mt-6 max-w-4xl bg-gradient-to-b bg-clip-text pb-2 text-[2.9rem] leading-[1.02] font-semibold tracking-[-0.045em] text-transparent sm:text-7xl lg:text-[5.4rem]">
+              Plan the sprint.
+              <br />
+              Ship the work.
+            </h1>
+            <p className="text-muted mt-5 max-w-xl text-lg leading-relaxed sm:text-xl">
+              Tasks, sprints and client requests in one fast workspace, with rules that handle the
+              busywork.
+            </p>
+            <MainActions viewer={viewer} />
+            <p className="text-subtle mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="text-accent-text size-3.5" aria-hidden /> Free for up to 5 people
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="text-accent-text size-3.5" aria-hidden /> No card needed
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Check className="text-accent-text size-3.5" aria-hidden /> Demo opens without
+                sign-up
+              </span>
+            </p>
+          </div>
+          <div className="mx-auto max-w-6xl px-4 pt-14 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
+            <div className="stage-bg border-border overflow-hidden rounded-[28px] border px-[4%] pt-[5%]">
+              <ScreensStage
+                desktop="board"
+                phone="home"
+                path="/w/halcyon/p/MOB"
+                desktopAlt="The board of the Mobile App project in the demo workspace"
+                phoneAlt="Home on a phone: tasks assigned to you, overdue work and unread updates"
+                priority
+              />
+            </div>
+          </div>
         </section>
 
         <section id="features" className="border-border bg-surface/40 scroll-mt-14 border-y">
@@ -138,23 +180,6 @@ export default async function HomePage() {
               week as CSV.
             </p>
           </Feature>
-        </section>
-
-        <section className="border-border bg-surface/40 overflow-hidden border-t">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-semibold tracking-[-0.015em] text-balance sm:text-3xl">
-                At your desk and on your phone
-              </h2>
-              <p className="text-muted mt-3 leading-relaxed">
-                The same workspace in the browser on a laptop or a phone. Check what&apos;s due,
-                reply to a comment or move a task from anywhere, with nothing to install.
-              </p>
-            </div>
-            <div className="mt-12">
-              <Everywhere />
-            </div>
-          </div>
         </section>
 
         <section className="border-border border-y">
