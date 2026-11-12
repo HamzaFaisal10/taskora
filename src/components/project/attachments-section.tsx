@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ImageIcon, Paperclip, Trash2, Upload } from "lucide-react";
+import { FileText, ImageIcon, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,13 @@ const size = (b: number) =>
       : `${(b / 1024 ** 2).toFixed(1)} MB`;
 const isImage = (m: string) => m.startsWith("image/");
 
+// Images you just uploaded are shown from the file on your device, without waiting for a signed URL.
+const localPreviews = new Map<string, string>();
+
 function Thumb({ path, alt }: { path: string; alt: string }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(() => localPreviews.get(path) ?? null);
   useEffect(() => {
+    if (localPreviews.has(path)) return;
     let live = true;
     createClient()
       .storage.from("attachments")
@@ -45,6 +49,10 @@ export function AttachmentsSection({ task, reload }: { task: TaskDetail; reload:
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [uploading, setUploading] = useState(0);
+  // Files on their way up, shown straight away with a preview.
+  const [pendingFiles, setPendingFiles] = useState<
+    { key: string; name: string; size: number; preview: string | null }[]
+  >([]);
   const [pending, start] = useTransition();
 
   const upload = async (files: FileList | File[]) => {
@@ -59,6 +67,9 @@ export function AttachmentsSection({ task, reload }: { task: TaskDetail; reload:
       ok.map(async (file) => {
         const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-120);
         const path = `${task.id}/${crypto.randomUUID()}-${safe}`;
+        const preview = isImage(file.type) ? URL.createObjectURL(file) : null;
+        if (preview) localPreviews.set(path, preview);
+        setPendingFiles((p) => [...p, { key: path, name: file.name, size: file.size, preview }]);
         const { error } = await supabase.storage
           .from("attachments")
           .upload(path, file, { contentType: file.type || undefined });
@@ -74,6 +85,11 @@ export function AttachmentsSection({ task, reload }: { task: TaskDetail; reload:
           });
           if (!res.ok) toast.error(res.error);
         }
+        if (error && preview) {
+          localPreviews.delete(path);
+          URL.revokeObjectURL(preview);
+        }
+        setPendingFiles((p) => p.filter((f) => f.key !== path));
         setUploading((n) => n - 1);
       }),
     );
@@ -112,8 +128,29 @@ export function AttachmentsSection({ task, reload }: { task: TaskDetail; reload:
           <span className="normal-case">{task.attachments.length}</span>
         )}
       </h3>
-      {task.attachments.length > 0 && (
+      {(task.attachments.length > 0 || pendingFiles.length > 0) && (
         <ul className="mb-2 grid gap-2 sm:grid-cols-2">
+          {pendingFiles.map((f) => (
+            <li
+              key={f.key}
+              className="border-border bg-card rounded-control flex items-center gap-3 border p-2 opacity-80"
+              aria-busy
+            >
+              <span className="bg-surface relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
+                {f.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- local preview of the file being uploaded
+                  <img src={f.preview} alt="" className="size-full object-cover" />
+                ) : (
+                  <FileText className="text-muted size-5" aria-hidden />
+                )}
+                <Loader2 className="text-fg absolute size-4 animate-spin" aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-medium">{f.name}</span>
+                <span className="text-subtle block text-xs">{size(f.size)} · uploading…</span>
+              </span>
+            </li>
+          ))}
           {task.attachments.map((a) => (
             <li
               key={a.id}

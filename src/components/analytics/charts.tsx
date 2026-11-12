@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { useId, useState } from "react";
 import type { WeekPoint } from "@/lib/analytics/compute";
 import { cn } from "@/lib/utils";
@@ -304,7 +305,7 @@ export function StatusChart({
               )}
               onMouseEnter={() => setHover(r.category)}
               onMouseLeave={() => setHover(null)}
-              title={`${r.label}: ${r.count} tasks (${Math.round(r.share * 100)}%)`}
+              title={`${r.label}: ${plural(r.count, "task")} (${Math.round(r.share * 100)}%)`}
             >
               <span className="truncate">{r.label}</span>
               <span className="flex h-3.5" aria-hidden>

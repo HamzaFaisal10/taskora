@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import {
   Archive,
   CalendarDays,
@@ -388,7 +389,7 @@ export function ProjectToolbar() {
       </div>
       {TASK_VIEWS.has(current) && tasks.length !== allTasks.length && (
         <p className="text-subtle px-4 pb-2 text-xs sm:px-8">
-          Showing {tasks.length} of {allTasks.length} tasks
+          Showing {tasks.length} of {plural(allTasks.length, "task")}
         </p>
       )}
     </div>

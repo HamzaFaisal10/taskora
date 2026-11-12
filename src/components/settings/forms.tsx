@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -270,7 +271,7 @@ export function LabelsManager({
             <Badge tone={l.tone as BadgeTone} shape="tag">
               {l.name}
             </Badge>
-            <span className="text-subtle text-xs">{counts[l.id] ?? 0} tasks</span>
+            <span className="text-subtle text-xs">{plural(counts[l.id] ?? 0, "task")}</span>
             {canEdit && (
               <span className="ml-auto flex gap-1">
                 <Button

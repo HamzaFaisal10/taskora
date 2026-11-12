@@ -3,9 +3,17 @@
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { CornerDownLeft, FolderKanban, FolderPlus, Search } from "lucide-react";
+import {
+  CircleCheck,
+  CircleDot,
+  CornerDownLeft,
+  FolderKanban,
+  FolderPlus,
+  Search,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { THEME_OPTIONS } from "@/components/theme";
+import type { TaskHit } from "@/app/api/search/route";
 import { cn } from "@/lib/utils";
 import { workspaceNav, settingsNav } from "./nav";
 import { useNewProject } from "./new-project";
@@ -92,13 +100,48 @@ export function CommandPalette({
     ];
   }, [workspace, workspaces, projects, router, setTheme, newProject]);
 
+  // Tasks matching the query, fetched as you type (results for an older query are ignored).
+  const [hits, setHits] = useState<{ q: string; tasks: TaskHit[] }>({ q: "", tasks: [] });
+  const [searching, setSearching] = useState(false);
+  const trimmed = query.trim();
+  useEffect(() => {
+    if (trimmed.length < 2) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      setSearching(true);
+      fetch(`/api/search?workspace=${workspace.id}&q=${encodeURIComponent(trimmed)}`, {
+        signal: ctrl.signal,
+      })
+        .then((r) => r.json())
+        .then((d: { tasks: TaskHit[] }) => setHits({ q: trimmed, tasks: d.tasks ?? [] }))
+        .catch(() => {})
+        .finally(() => setSearching(false));
+    }, 180);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [trimmed, workspace.id]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return commands;
-    return commands.filter((c) =>
+    const matched = commands.filter((c) =>
       `${c.label} ${c.hint ?? ""} ${c.group}`.toLowerCase().includes(q),
     );
-  }, [commands, query]);
+    const tasks: Command[] =
+      hits.q === query.trim()
+        ? hits.tasks.map((t) => ({
+            id: `task-${t.ref}`,
+            group: "Tasks",
+            label: t.title,
+            hint: `${t.ref} · ${t.projectName}`,
+            icon: t.done ? CircleCheck : CircleDot,
+            run: () => router.push(`/w/${workspace.slug}/p/${t.projectKey}?task=${t.ref}`),
+          }))
+        : [];
+    return [...tasks, ...matched];
+  }, [commands, query, hits, router, workspace.slug]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -163,7 +206,7 @@ export function CommandPalette({
                 setQuery(e.target.value);
                 setActive(0);
               }}
-              placeholder="Search pages, projects and commands…"
+              placeholder="Search tasks, projects and pages…"
               className="text-fg placeholder:text-subtle h-12 flex-1 bg-transparent text-sm outline-none"
               role="combobox"
               aria-expanded
@@ -178,7 +221,11 @@ export function CommandPalette({
             className="max-h-[50dvh] overflow-y-auto p-1.5"
           >
             {results.length === 0 && (
-              <p className="text-muted px-3 py-8 text-center text-sm">No results for “{query}”</p>
+              <p className="text-muted px-3 py-8 text-center text-sm">
+                {searching || (trimmed.length >= 2 && hits.q !== trimmed)
+                  ? "Searching…"
+                  : `No results for “${query}”`}
+              </p>
             )}
             {results.map((cmd, i) => {
               const header = cmd.group !== lastGroup ? cmd.group : null;

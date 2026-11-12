@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { Copy, ExternalLink, FileText, GripVertical, Plus, Trash2, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -67,8 +68,8 @@ function FormCard({ form }: { form: FormSummary }) {
           </div>
           {form.description && <p className="text-muted mt-1 text-[13px]">{form.description}</p>}
           <p className="text-subtle mt-2 text-xs">
-            {form.fields.length} questions · {form.submissions}{" "}
-            {form.submissions === 1 ? "submission" : "submissions"} · new answers land in Triage
+            {plural(form.fields.length, "question")} · {plural(form.submissions, "submission")} ·
+            new answers land in Triage
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button

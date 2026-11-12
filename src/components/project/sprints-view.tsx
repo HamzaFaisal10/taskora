@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import {
   addDays,
   differenceInCalendarDays,
@@ -544,7 +545,8 @@ export function SprintsView() {
                       {format(parseISO(s.endDate), "MMM d")}
                     </span>
                     <span className="text-subtle text-xs">
-                      {tasks.length} tasks · {tasks.reduce((n, t) => n + points(t), 0)} pts
+                      {plural(tasks.length, "task")} · {tasks.reduce((n, t) => n + points(t), 0)}{" "}
+                      pts
                     </span>
                     {!active && canEdit && (
                       <Button

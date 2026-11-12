@@ -448,7 +448,7 @@ export function GoalsView({
         title="Goals"
         description={
           goals.length
-            ? `${goals.length} goals · ${atRisk ? `${atRisk} need attention` : "all on track"}`
+            ? `${goals.length} ${goals.length === 1 ? "goal" : "goals"} · ${atRisk ? `${atRisk} need attention` : goals.length === 1 ? "on track" : "all on track"}`
             : "Company outcomes, measured."
         }
         actions={

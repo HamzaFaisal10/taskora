@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { ArrowDownRight, ArrowUpRight, Download, Minus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -209,7 +210,7 @@ export function AnalyticsView({
           </Stat>
           <Stat label="Open tasks" value={k.open}>
             <span className="text-subtle text-xs">
-              Across {projectId === "all" ? `${projects.length} projects` : "this project"}
+              Across {projectId === "all" ? plural(projects.length, "project") : "this project"}
             </span>
           </Stat>
           <Stat

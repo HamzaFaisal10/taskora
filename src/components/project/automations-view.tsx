@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/plural";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { ArrowRight, Plus, Trash2, Workflow, X, Zap } from "lucide-react";
 import { useState, useTransition } from "react";
@@ -506,7 +507,7 @@ export function AutomationsView({ rules }: { rules: Automation[] }) {
           <p className="text-muted text-sm">
             {rules.length === 0
               ? "Let Taskora handle the busywork."
-              : `${active} of ${rules.length} rules on`}
+              : `${active} of ${plural(rules.length, "rule")} on`}
             {rules.length > 0 && (
               <Badge tone="neutral" className="ml-2">
                 {rules.reduce((n, r) => n + r.runCount, 0)} runs
