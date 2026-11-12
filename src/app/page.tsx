@@ -1,4 +1,4 @@
-import { CalendarDays, Columns3, GanttChart, List, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import {
   FinalCta,
@@ -6,6 +6,7 @@ import {
   MarketingFooter,
   MarketingNav,
 } from "@/components/marketing/chrome";
+import { Everywhere, ProductTour } from "@/components/marketing/devices";
 import { HeroBoard } from "@/components/marketing/hero-board";
 import { Faq, PricingPlans } from "@/components/marketing/pricing";
 import {
@@ -29,17 +30,6 @@ const INSIDE = [
   "Time tracking",
   "Goals",
   "AI planning",
-];
-
-const VIEWS = [
-  { icon: Columns3, name: "Board", text: "Drag work across your own columns." },
-  { icon: List, name: "List", text: "Every task in one dense, editable list." },
-  { icon: CalendarDays, name: "Calendar", text: "Drag a task to another day to reschedule it." },
-  {
-    icon: GanttChart,
-    name: "Timeline",
-    text: "Start and due dates, sprints and today, side by side.",
-  },
 ];
 
 function Feature({
@@ -72,21 +62,21 @@ export default async function HomePage() {
     <>
       <MarketingNav viewer={viewer} />
       <main>
-        {/* Hero: the pitch and the two main actions in the middle, then a board you can actually use. */}
-        <section className="mx-auto max-w-6xl px-4 pt-16 pb-16 sm:px-6 sm:pt-24 lg:pb-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl">
+        {/* Hero: the pitch and the two main actions on the left, a board you can actually use on the right. */}
+        <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,11fr)_minmax(0,13fr)] lg:gap-14 lg:pb-24">
+          <div>
+            <h1 className="text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[3.4rem]">
               Plan the sprint, ship the work, skip the status meeting.
             </h1>
-            <p className="text-muted mx-auto mt-6 max-w-xl text-lg leading-relaxed">
+            <p className="text-muted mt-6 max-w-lg text-lg leading-relaxed">
               Taskora keeps a product team&apos;s tasks, sprints and requests in one fast workspace,
               with rules that handle the busywork. Free for up to five people.
             </p>
-            <MainActions viewer={viewer} center />
+            <MainActions viewer={viewer} />
             <p className="text-subtle mt-4 text-sm">
               The demo needs no sign-up and resets every night.
             </p>
-            <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What's inside">
+            <ul className="mt-8 flex max-w-lg flex-wrap gap-2" aria-label="What's inside">
               {INSIDE.map((name) => (
                 <li
                   key={name}
@@ -97,28 +87,21 @@ export default async function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="mx-auto mt-12 max-w-4xl sm:mt-16">
-            <HeroBoard />
-          </div>
+          <HeroBoard />
         </section>
 
         <section id="features" className="border-border bg-surface/40 scroll-mt-14 border-y">
-          <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-            <h2 className="text-lg font-semibold">One project, four ways to look at it</h2>
-            <dl className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-              {VIEWS.map((v) => (
-                <div key={v.name}>
-                  <dt className="flex items-center gap-2 font-medium">
-                    <v.icon className="text-accent-text size-4" aria-hidden />
-                    {v.name}
-                  </dt>
-                  <dd className="text-muted mt-1.5 text-sm leading-relaxed">{v.text}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="text-subtle mt-6 text-sm">
-              Search and filters carry across every view, and each task has its own shareable link.
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <h2 className="max-w-2xl text-2xl font-semibold tracking-[-0.015em] text-balance sm:text-3xl">
+              One project, five ways to look at it
+            </h2>
+            <p className="text-muted mt-3 max-w-2xl leading-relaxed">
+              These are the real screens of the demo workspace. Search and filters carry across
+              every view, and each task has its own shareable link.
             </p>
+            <div className="mt-8">
+              <ProductTour />
+            </div>
           </div>
         </section>
 
@@ -181,6 +164,23 @@ export default async function HomePage() {
               week as CSV.
             </p>
           </Feature>
+        </section>
+
+        <section className="border-border bg-surface/40 overflow-hidden border-t">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-2xl font-semibold tracking-[-0.015em] text-balance sm:text-3xl">
+                At your desk and on your phone
+              </h2>
+              <p className="text-muted mt-3 leading-relaxed">
+                The same workspace in the browser on a laptop or a phone. Check what&apos;s due,
+                reply to a comment or move a task from anywhere, with nothing to install.
+              </p>
+            </div>
+            <div className="mt-12">
+              <Everywhere />
+            </div>
+          </div>
         </section>
 
         <section className="border-border border-y">
