@@ -73,7 +73,9 @@ export function TimeSection({ task, reload }: { task: TaskDetail; reload: () => 
       {logging && (
         <form
           className="border-border bg-surface rounded-card mb-2 grid gap-2 border p-3 sm:grid-cols-[5rem_5rem_9rem_minmax(0,1fr)_auto]"
-          action={(form) =>
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
             start(async () => {
               const minutes = Number(form.get("h") || 0) * 60 + Number(form.get("m") || 0);
               const res = await logTime({
@@ -87,8 +89,8 @@ export function TimeSection({ task, reload }: { task: TaskDetail; reload: () => 
               setLogging(false);
               toast.success(`Logged ${formatDuration(minutes * 60)}`);
               reload();
-            })
-          }
+            });
+          }}
         >
           <Input
             name="h"

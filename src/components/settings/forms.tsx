@@ -52,7 +52,9 @@ export function GeneralForm({
       <Card className="p-5">
         <form
           className="space-y-4"
-          action={(form) =>
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
             start(async () => {
               const res = await updateWorkspace({
                 slug,
@@ -62,8 +64,8 @@ export function GeneralForm({
               if (!res.ok) return setError(res.error);
               setError(undefined);
               toast.success("Workspace updated");
-            })
-          }
+            });
+          }}
         >
           <div className="space-y-1.5">
             <Label htmlFor="ws-name">Workspace name</Label>
@@ -328,7 +330,10 @@ export function PasswordForm({ slug }: { slug: string }) {
       <form
         key={formKey}
         className="space-y-4"
-        action={(form) =>
+        // onSubmit rather than a form action, so the fields keep what was typed when there's an error.
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = new FormData(e.currentTarget);
           start(async () => {
             const res = await changePassword({
               slug,
@@ -340,8 +345,8 @@ export function PasswordForm({ slug }: { slug: string }) {
             setError(undefined);
             setFormKey((k) => k + 1);
             toast.success("Password changed");
-          })
-        }
+          });
+        }}
       >
         <div className="space-y-1.5">
           <Label htmlFor="pw-current">Current password</Label>
@@ -405,14 +410,16 @@ export function ProfileForm({
     <Card className="p-5">
       <form
         className="space-y-4"
-        action={(form) =>
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = new FormData(e.currentTarget);
           start(async () => {
             const res = await updateProfile({ slug, fullName: String(form.get("name")) });
             if (!res.ok) return setError(res.error);
             setError(undefined);
             toast.success("Profile updated");
-          })
-        }
+          });
+        }}
       >
         <div className="space-y-1.5">
           <Label htmlFor="profile-name">Full name</Label>
