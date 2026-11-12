@@ -27,7 +27,7 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
           <ThemeToggle />
           {viewer === "user" ? (
             <>
-              <Button asChild size="sm" variant="secondary">
+              <Button asChild size="sm" variant="secondary" className="demo-glow">
                 <Link href="/w/demo">Live demo</Link>
               </Button>
               <Button asChild size="sm">
@@ -37,11 +37,11 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
           ) : (
             <>
               {viewer === "demo" ? (
-                <Button asChild size="sm" variant="secondary">
+                <Button asChild size="sm" variant="secondary" className="demo-glow">
                   <Link href="/w/demo">Live demo</Link>
                 </Button>
               ) : (
-                <DemoButton size="sm" variant="secondary" label="Live demo" />
+                <DemoButton size="sm" variant="secondary" label="Live demo" glow />
               )}
               <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
                 <Link href="/login">Sign in</Link>
@@ -71,10 +71,10 @@ export function MainActions({
   return (
     <div className={`mt-8 flex flex-col gap-3 sm:flex-row ${center ? "sm:justify-center" : ""}`}>
       {viewer === "out" ? (
-        <DemoButton className="sm:w-64" variant="primary" label="Try the live demo" />
+        <DemoButton className="sm:w-64" variant="primary" label="Try the live demo" glow />
       ) : (
         // Already in the demo: go straight back. With your own account: a page explains the switch first.
-        <Button asChild size="lg" className="sm:w-64">
+        <Button asChild size="lg" className="demo-glow sm:w-64">
           <Link href="/w/demo">Try the live demo</Link>
         </Button>
       )}

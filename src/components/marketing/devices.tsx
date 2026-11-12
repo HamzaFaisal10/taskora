@@ -25,7 +25,7 @@ function Shot({
   priority?: boolean;
   sizes: string;
 }) {
-  const [w, h] = device === "desktop" ? [1920, 1200] : [720, 1226];
+  const [w, h] = device === "desktop" ? [1920, 1200] : [780, 1594];
   const common = { width: w, height: h, sizes, priority, className: "block h-auto w-full" };
   return (
     <>
@@ -82,7 +82,11 @@ export function BrowserFrame({
 function Laptop({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <div className="rounded-t-[18px] border border-b-0 border-[#2a2d33] bg-[#16181c] p-[1.6%] pb-[2.2%]">
+      <div className="relative rounded-t-[18px] border border-b-0 border-[#2a2d33] bg-[#16181c] p-[1.6%] pb-[2.2%]">
+        <span
+          className="absolute top-[0.55%] left-1/2 size-[clamp(3px,0.45vw,6px)] -translate-x-1/2 rounded-full bg-[#2b2f36]"
+          aria-hidden
+        />
         <div className="overflow-hidden rounded-[6px]">{children}</div>
       </div>
       <div className="relative mx-[-6%] h-[clamp(10px,1.6vw,18px)] rounded-b-[14px] bg-gradient-to-b from-[#3a3e45] to-[#24272c]">
@@ -95,35 +99,77 @@ function Laptop({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** A phone: rounded body, thin bezel, a status bar and a camera pill at the top. */
+/**
+ * An iPhone: titanium rim, black bezel, the Dynamic Island in the status bar, side buttons and the home
+ * indicator. Sizes are in container-width units, so it looks the same at any size.
+ */
 function Phone({ children, className }: { children: React.ReactNode; className?: string }) {
+  const side = "absolute w-[1.1cqw] bg-gradient-to-r from-[#55585e] to-[#2c2e33]";
   return (
-    <div
-      className={cn(
-        "rounded-[clamp(22px,4vw,44px)] border border-[#2a2d33] bg-[#16181c] p-[3.2%] shadow-[0_30px_60px_-20px_rgb(0_0_0/0.6)]",
-        className,
-      )}
-    >
-      <div className="bg-bg overflow-hidden rounded-[clamp(16px,3.2vw,36px)]">
-        <div
-          className="text-fg relative flex aspect-[720/78] items-center justify-between px-[9%] text-[clamp(7px,1vw,12px)] font-semibold"
-          aria-hidden
-        >
-          <span>9:41</span>
-          <span className="absolute top-1/2 left-1/2 h-[46%] w-[30%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black" />
-          <span className="flex items-center gap-[0.3em]">
-            <span className="flex h-[0.8em] items-end gap-[0.12em]">
-              <span className="h-[40%] w-[0.18em] rounded-[1px] bg-current" />
-              <span className="h-[60%] w-[0.18em] rounded-[1px] bg-current" />
-              <span className="h-[80%] w-[0.18em] rounded-[1px] bg-current" />
-              <span className="h-full w-[0.18em] rounded-[1px] bg-current" />
-            </span>
-            <span className="relative h-[0.85em] w-[1.7em] rounded-[0.25em] border border-current p-[0.1em]">
-              <span className="block h-full w-[75%] rounded-[0.1em] bg-current" />
-            </span>
-          </span>
+    <div className={cn("@container relative", className)}>
+      {/* Action button and volume on the left, power on the right. */}
+      <span
+        className={cn(side, "top-[17%] -left-[0.8cqw] h-[6%] rounded-l-[0.6cqw]")}
+        aria-hidden
+      />
+      <span
+        className={cn(side, "top-[26%] -left-[0.8cqw] h-[10%] rounded-l-[0.6cqw]")}
+        aria-hidden
+      />
+      <span
+        className={cn(side, "top-[38%] -left-[0.8cqw] h-[10%] rounded-l-[0.6cqw]")}
+        aria-hidden
+      />
+      <span
+        className={cn(
+          side,
+          "top-[29%] -right-[0.8cqw] h-[15%] rounded-r-[0.6cqw] bg-gradient-to-l",
+        )}
+        aria-hidden
+      />
+      <div className="rounded-[17cqw] bg-gradient-to-br from-[#6b6e74] via-[#2e3034] to-[#55585d] p-[1.1cqw] shadow-[0_40px_80px_-30px_rgb(0_0_0/0.75)]">
+        <div className="rounded-[16cqw] bg-black p-[3.6cqw]">
+          <div className="bg-bg relative overflow-hidden rounded-[12.6cqw]">
+            <div
+              className="text-fg relative flex h-[12.5cqw] items-center justify-between px-[8.5cqw] pt-[1.2cqw] text-[3.9cqw] font-semibold tracking-tight"
+              aria-hidden
+            >
+              <span className="w-[16cqw]">9:41</span>
+              <span className="absolute top-[2.6cqw] left-1/2 h-[8.4cqw] w-[30cqw] -translate-x-1/2 rounded-full bg-black" />
+              <span className="flex w-[16cqw] items-center justify-end gap-[1.2cqw]">
+                <svg viewBox="0 0 18 12" className="h-[3cqw] w-auto fill-current">
+                  <rect x="0" y="8" width="3" height="4" rx="0.8" />
+                  <rect x="5" y="5.5" width="3" height="6.5" rx="0.8" />
+                  <rect x="10" y="3" width="3" height="9" rx="0.8" />
+                  <rect x="15" y="0" width="3" height="12" rx="0.8" />
+                </svg>
+                <svg viewBox="0 0 16 12" className="h-[3cqw] w-auto fill-current">
+                  <path d="M8 2.6c2.3 0 4.4.9 6 2.4l1.3-1.4A10.4 10.4 0 0 0 8 .7 10.4 10.4 0 0 0 .7 3.6L2 5a8.5 8.5 0 0 1 6-2.4Zm0 3.7c1.3 0 2.5.5 3.4 1.3l1.3-1.4A6.8 6.8 0 0 0 8 4.4a6.8 6.8 0 0 0-4.7 1.8l1.3 1.4c.9-.8 2.1-1.3 3.4-1.3Zm0 3.6c.4 0 .8.2 1.1.4L8 11.6 6.9 10.3c.3-.2.7-.4 1.1-.4Z" />
+                </svg>
+                <svg viewBox="0 0 27 13" className="h-[3.1cqw] w-auto">
+                  <rect
+                    x="0.5"
+                    y="0.5"
+                    width="23"
+                    height="12"
+                    rx="3.5"
+                    className="fill-none stroke-current opacity-40"
+                  />
+                  <rect x="2.5" y="2.5" width="19" height="8" rx="2" className="fill-current" />
+                  <path
+                    d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z"
+                    className="fill-current opacity-40"
+                  />
+                </svg>
+              </span>
+            </div>
+            {children}
+            <span
+              className="bg-fg/85 absolute bottom-[1.8cqw] left-1/2 h-[1.25cqw] w-[34cqw] -translate-x-1/2 rounded-full"
+              aria-hidden
+            />
+          </div>
         </div>
-        {children}
       </div>
     </div>
   );

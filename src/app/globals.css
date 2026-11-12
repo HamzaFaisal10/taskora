@@ -9,6 +9,7 @@
 --------------------------------------------------------------------------- */
 :root,
 [data-theme="dark"] {
+  --glow: rgb(255 255 255 / 0.9);
   color-scheme: dark;
 
   --bg: #0e0f11;
@@ -55,6 +56,7 @@
 }
 
 [data-theme="light"] {
+  --glow: rgb(24 26 30 / 0.75);
   color-scheme: light;
 
   --bg: #f7f7f5;
@@ -209,5 +211,51 @@
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* "Try the live demo": a soft light travels around the button's border. */
+@property --glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.demo-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.demo-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-control, 8px) + 2px);
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    transparent 250deg,
+    var(--glow) 320deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: glow-spin 3.2s linear infinite;
+}
+
+@keyframes glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-glow::before {
+    animation: none;
   }
 }

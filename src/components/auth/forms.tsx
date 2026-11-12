@@ -68,15 +68,23 @@ export function DemoButton({
   variant = "ai",
   label = "Try the live demo — no sign-up",
   size = "lg",
+  glow = false,
 }: {
   className?: string;
   variant?: "ai" | "primary" | "secondary";
   label?: string;
   size?: "sm" | "lg";
+  /** A soft light that travels around the border. */
+  glow?: boolean;
 }) {
   return (
     <form action="/api/demo" method="post" className={className}>
-      <Button type="submit" variant={variant} size={size} className="w-full">
+      <Button
+        type="submit"
+        variant={variant}
+        size={size}
+        className={glow ? "demo-glow w-full" : "w-full"}
+      >
         {label}
       </Button>
     </form>

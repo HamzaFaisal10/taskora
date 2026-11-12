@@ -7,7 +7,6 @@ import {
   MarketingNav,
 } from "@/components/marketing/chrome";
 import { Everywhere, ProductTour } from "@/components/marketing/devices";
-import { HeroBoard } from "@/components/marketing/hero-board";
 import { Faq, PricingPlans } from "@/components/marketing/pricing";
 import {
   AiVisual,
@@ -18,19 +17,6 @@ import {
   TimeVisual,
 } from "@/components/marketing/visuals";
 import { marketingViewer } from "@/lib/marketing-viewer";
-
-const INSIDE = [
-  "Board",
-  "List",
-  "Calendar",
-  "Timeline",
-  "Sprints",
-  "Automations",
-  "Request forms",
-  "Time tracking",
-  "Goals",
-  "AI planning",
-];
 
 function Feature({
   title,
@@ -62,32 +48,20 @@ export default async function HomePage() {
     <>
       <MarketingNav viewer={viewer} />
       <main>
-        {/* Hero: the pitch and the two main actions on the left, a board you can actually use on the right. */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,11fr)_minmax(0,13fr)] lg:gap-14 lg:pb-24">
-          <div>
-            <h1 className="text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[3.4rem]">
-              Plan the sprint, ship the work, skip the status meeting.
-            </h1>
-            <p className="text-muted mt-6 max-w-lg text-lg leading-relaxed">
-              Taskora keeps a product team&apos;s tasks, sprints and requests in one fast workspace,
-              with rules that handle the busywork. Free for up to five people.
-            </p>
-            <MainActions viewer={viewer} />
-            <p className="text-subtle mt-4 text-sm">
-              The demo needs no sign-up and resets every night.
-            </p>
-            <ul className="mt-8 flex max-w-lg flex-wrap gap-2" aria-label="What's inside">
-              {INSIDE.map((name) => (
-                <li
-                  key={name}
-                  className="border-border bg-surface text-fg-2 rounded-full border px-3 py-1 text-[13px]"
-                >
-                  {name}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <HeroBoard />
+        {/* Hero: two lines, one sentence and the two main actions. The product is shown right below. */}
+        <section className="mx-auto max-w-6xl px-4 pt-20 pb-20 sm:px-6 sm:pt-28 sm:pb-24">
+          <h1 className="from-fg to-fg/60 max-w-4xl bg-gradient-to-b bg-clip-text pb-1 text-[2.9rem] leading-[1.02] font-semibold tracking-[-0.045em] text-transparent sm:text-7xl lg:text-[5.25rem]">
+            Plan the sprint.
+            <br />
+            Ship the work.
+          </h1>
+          <p className="text-muted mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">
+            Tasks, sprints and client requests in one fast workspace. Free for up to five people.
+          </p>
+          <MainActions viewer={viewer} />
+          <p className="text-subtle mt-4 text-sm">
+            No sign-up for the demo. It resets every night.
+          </p>
         </section>
 
         <section id="features" className="border-border bg-surface/40 scroll-mt-14 border-y">
