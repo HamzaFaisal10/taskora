@@ -61,6 +61,7 @@ export type ProjectData = {
     color: string;
     description: string;
     workspaceId: string;
+    createdBy: string | null;
   };
   statuses: Status[];
   tasks: BoardTask[];

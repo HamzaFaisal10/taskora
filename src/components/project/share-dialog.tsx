@@ -161,7 +161,9 @@ export function ShareDialog({
                     <Users className="text-muted size-3.5" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1 text-sm">
-                    All {access.members} workspace members
+                    {access.members === 1
+                      ? "The 1 workspace member"
+                      : `All ${access.members} workspace members`}
                   </span>
                   <span className="text-subtle text-xs">Can edit</span>
                 </li>

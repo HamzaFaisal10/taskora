@@ -71,6 +71,11 @@ export function Timesheet({
     () => entries.filter((e) => !e.running && (scope === "everyone" || e.person.id === viewerId)),
     [entries, scope, viewerId],
   );
+  // Timers that are still running are listed on their own; they join the totals when stopped.
+  const running = useMemo(
+    () => entries.filter((e) => e.running && (scope === "everyone" || e.person.id === viewerId)),
+    [entries, scope, viewerId],
+  );
 
   const people = useMemo(() => {
     const map = new Map<string, { person: Entry["person"]; perDay: number[]; total: number }>();
@@ -146,12 +151,50 @@ export function Timesheet({
         }
       />
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 pb-12 sm:px-8">
+        {running.length > 0 && (
+          <Card className="p-0">
+            <h2 className="text-fg-2 border-border-subtle border-b px-4 py-2.5 text-[13px] font-medium">
+              Running now
+            </h2>
+            <ul className="divide-border-subtle divide-y">
+              {running.map((e) => (
+                <li key={e.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <span
+                    className="bg-accent size-2 shrink-0 animate-pulse rounded-full"
+                    aria-hidden
+                  />
+                  <Avatar
+                    name={e.person.name}
+                    src={e.person.avatarUrl}
+                    seed={e.person.id}
+                    size={22}
+                  />
+                  <span className="text-muted shrink-0">{e.person.name}</span>
+                  <Link
+                    href={`/w/${slug}/p/${e.task.projectKey}?task=${e.task.ref}`}
+                    className="min-w-0 flex-1 truncate hover:underline"
+                  >
+                    <span className="text-subtle font-mono text-[11px]">{e.task.ref}</span>{" "}
+                    {e.task.title}
+                  </Link>
+                  <span className="text-subtle shrink-0 text-xs">
+                    since {format(parseISO(e.startedAt), "h:mm a")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
         {visible.length === 0 ? (
           <Card>
             <EmptyState
               icon={<Clock />}
               title="No time logged this week"
-              description="Start a timer or log time from any task's panel."
+              description={
+                running.length
+                  ? "Running timers are added here when they're stopped."
+                  : "Start a timer or log time from any task's panel."
+              }
             />
           </Card>
         ) : (

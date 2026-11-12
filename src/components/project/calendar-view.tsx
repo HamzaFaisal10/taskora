@@ -145,6 +145,7 @@ function Day({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Task title"
+                  maxLength={300}
                   aria-label="Task title"
                   className="h-9"
                 />

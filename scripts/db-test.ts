@@ -863,6 +863,77 @@ async function main() {
     });
   });
 
+  await test("mentions don't also send a 'commented' notification, and completions notify watchers", async () => {
+    const ws = await as(
+      outsider,
+      () =>
+        one<{ id: string }>("select (public.create_workspace('Notify Co', 'notify-co')).id as id"),
+      { keep: true },
+    );
+    const teammate = await createAuthUser("mo@notify.example", "Mo Member");
+    const projectId = randomUUID();
+    const taskId = randomUUID();
+    await as(
+      "service",
+      async () => {
+        await q(
+          "insert into public.workspace_members (workspace_id, user_id, role) values ($1, $2, 'member')",
+          [ws.id, teammate],
+        );
+      },
+      { keep: true },
+    );
+    await as(
+      outsider,
+      async () => {
+        await q(
+          "insert into public.projects (id, workspace_id, key, name, created_by) values ($1, $2, 'NTF', 'Notify', $3)",
+          [projectId, ws.id, outsider],
+        );
+        await q(
+          "insert into public.tasks (id, project_id, title, assignee_id) values ($1, $2, 'Ship it', $3)",
+          [taskId, projectId, teammate],
+        );
+        await q(
+          "insert into public.comments (task_id, author_id, body) values ($1, $2, 'Over to you @Mo Member')",
+          [taskId, outsider],
+        );
+      },
+      { keep: true },
+    );
+    const commented = await as("service", () =>
+      one<{ n: number }>(
+        "select count(*)::int as n from public.notifications where user_id = $1 and task_id = $2 and kind = 'commented'",
+        [teammate, taskId],
+      ),
+    );
+    assert.equal(commented.n, 0, "a mentioned person only gets the mention");
+    await as(
+      teammate,
+      async () => {
+        const done = await one<{ id: string }>(
+          "select id from public.task_statuses where project_id = $1 and category = 'completed' limit 1",
+          [projectId],
+        );
+        await q("update public.tasks set status_id = $1 where id = $2", [done.id, taskId]);
+      },
+      { keep: true },
+    );
+    const completed = await as("service", () =>
+      one<{ n: number }>(
+        "select count(*)::int as n from public.notifications where user_id = $1 and task_id = $2 and title like 'completed %'",
+        [outsider, taskId],
+      ),
+    );
+    assert.equal(completed.n, 1, "the creator hears that the task was completed");
+    await rejects(
+      as(teammate, () =>
+        q("update public.projects set archived_at = now() where id = $1", [projectId]),
+      ),
+      /ARCHIVE_NOT_ALLOWED/,
+    );
+  });
+
   await test("the shared demo account can't create workspaces", async () => {
     await rejects(
       as(owner, () => q("select public.create_workspace('Visitor Co', 'visitor-co')")),

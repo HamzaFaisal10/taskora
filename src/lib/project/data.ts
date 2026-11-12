@@ -33,7 +33,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
     getWorkspaceContext(slug),
     supabase
       .from("projects")
-      .select("id, key, name, color, description, workspace_id, workspaces!inner()")
+      .select("id, key, name, color, description, workspace_id, created_by, workspaces!inner()")
       .eq("workspaces.slug", slug)
       .eq("key", key.toUpperCase())
       .is("archived_at", null)
@@ -113,6 +113,7 @@ export const getProjectData = cache(async (slug: string, key: string): Promise<P
       color: project.color,
       description: project.description,
       workspaceId: project.workspace_id,
+      createdBy: (project as { created_by: string | null }).created_by ?? null,
     },
     statuses: statusList,
     tasks: rows

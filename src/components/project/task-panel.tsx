@@ -140,6 +140,7 @@ function AutoTextarea({
   disabled,
   ariaLabel,
   singleLine,
+  maxLength,
 }: {
   value: string;
   onCommit: (v: string) => void;
@@ -148,6 +149,7 @@ function AutoTextarea({
   disabled?: boolean;
   ariaLabel: string;
   singleLine?: boolean;
+  maxLength?: number;
 }) {
   const [draft, setDraft] = useState(value);
   const [prev, setPrev] = useState(value);
@@ -170,6 +172,7 @@ function AutoTextarea({
       disabled={disabled}
       aria-label={ariaLabel}
       placeholder={placeholder}
+      maxLength={maxLength}
       onChange={(e) => setDraft(singleLine ? e.target.value.replace(/\n/g, "") : e.target.value)}
       onBlur={() => draft !== value && onCommit(draft)}
       onKeyDown={(e) => {
@@ -332,6 +335,7 @@ function PanelBody({
             singleLine
             disabled={!canEdit}
             ariaLabel="Task title"
+            maxLength={300}
             onCommit={(v) => v.trim() && patch({ title: v.trim() })}
             className="text-xl leading-snug font-semibold tracking-tight"
           />
@@ -573,6 +577,7 @@ function PanelBody({
                     value={subtask}
                     onChange={(e) => setSubtask(e.target.value)}
                     placeholder="Add subtask"
+                    maxLength={300}
                     aria-label="New subtask title"
                     className="placeholder:text-subtle h-8 flex-1 bg-transparent text-sm outline-none"
                   />

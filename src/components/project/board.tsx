@@ -103,6 +103,7 @@ function QuickAdd({ statusId }: { statusId: string }) {
         }}
         rows={2}
         placeholder="Task title"
+        maxLength={300}
         aria-label="New task title"
         className="placeholder:text-subtle w-full resize-none bg-transparent text-[13.5px] outline-none"
       />

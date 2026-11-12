@@ -57,7 +57,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/setti
         description={
           limit
             ? `${seats} of ${limit} seats used on the ${workspace.plan === "free" ? "Free" : "Pro"} plan. Guests don’t use a seat.`
-            : `${seats} members`
+            : `${seats} ${seats === 1 ? "member" : "members"}. Guests don’t use a seat.`
         }
       />
       <div className="space-y-6">

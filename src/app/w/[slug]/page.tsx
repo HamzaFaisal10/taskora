@@ -94,12 +94,20 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
           <h2 className="mb-3 text-[13px] font-medium">Projects</h2>
           {projects.length === 0 ? (
             <Card>
-              <EmptyState
-                icon={<FolderKanban />}
-                title="No projects yet"
-                description="Start blank or from a template with starter tasks."
-                action={<NewProjectButton />}
-              />
+              {workspace.role === "guest" ? (
+                <EmptyState
+                  icon={<FolderKanban />}
+                  title="Nothing shared with you yet"
+                  description="You'll see projects here once someone on the team shares one with you."
+                />
+              ) : (
+                <EmptyState
+                  icon={<FolderKanban />}
+                  title="No projects yet"
+                  description="Start blank or from a template with starter tasks."
+                  action={<NewProjectButton />}
+                />
+              )}
             </Card>
           ) : (
             <ul className="space-y-2">

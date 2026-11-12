@@ -121,7 +121,11 @@ export async function archiveProject(input: { slug: string; projectId: string })
     .from("projects")
     .update({ archived_at: new Date().toISOString() })
     .eq("id", input.projectId);
-  if (error) return { ok: false, error: "You don't have permission to archive this project." };
+  if (error)
+    return {
+      ok: false,
+      error: "Only workspace admins and the person who created this project can archive it.",
+    };
   revalidatePath(`/w/${input.slug}`, "layout");
   return { ok: true, data: null };
 }

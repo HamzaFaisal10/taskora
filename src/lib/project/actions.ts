@@ -43,8 +43,12 @@ export async function moveTask(input: {
 
 const patchSchema = z
   .object({
-    title: z.string().trim().min(1).max(300),
-    description: z.string().max(50000),
+    title: z
+      .string()
+      .trim()
+      .min(1, "Give the task a title.")
+      .max(300, "Keep the title under 300 characters."),
+    description: z.string().max(50000, "The description is too long (50,000 characters at most)."),
     statusId: uuid,
     priority: z.enum(["none", "low", "medium", "high", "urgent"]),
     assigneeId: uuid.nullable(),
@@ -76,7 +80,8 @@ export async function updateTask(input: {
 }): Promise<Result> {
   const id = uuid.safeParse(input.taskId);
   const patch = patchSchema.safeParse(input.patch);
-  if (!id.success || !patch.success) return fail("Invalid change.");
+  if (!id.success) return fail("Invalid change.");
+  if (!patch.success) return fail(patch.error.issues[0]?.message ?? "Invalid change.");
   const row: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch.data)) row[COLUMNS[k as keyof TaskPatch]] = v;
   if (row.start_date && row.due_date && String(row.start_date) > String(row.due_date))
@@ -86,8 +91,8 @@ export async function updateTask(input: {
   const { error } = await supabase.from("tasks").update(row).eq("id", id.data);
   if (error)
     return fail(
-      error.message.includes("due_date")
-        ? "Start date must be before the due date."
+      error.code === "23514" || /due_date|start_date/.test(error.message)
+        ? "The start date must be on or before the due date."
         : message(error),
     );
   return { ok: true, data: null };
@@ -106,7 +111,11 @@ export async function createTask(input: {
   const p = z
     .object({
       projectId: uuid,
-      title: z.string().trim().min(1, "Give the task a title.").max(300),
+      title: z
+        .string()
+        .trim()
+        .min(1, "Give the task a title.")
+        .max(300, "Keep the title under 300 characters."),
       statusId: uuid.optional(),
       dueDate: date.optional(),
       parentId: uuid.nullable().optional(),
@@ -185,7 +194,14 @@ export async function addComment(input: {
   body: string;
 }): Promise<Result> {
   const p = z
-    .object({ taskId: uuid, body: z.string().trim().min(1, "Write a comment first.").max(10000) })
+    .object({
+      taskId: uuid,
+      body: z
+        .string()
+        .trim()
+        .min(1, "Write a comment first.")
+        .max(10000, "Keep comments under 10,000 characters."),
+    })
     .safeParse(input);
   if (!p.success) return fail(p.error.issues[0].message);
   const supabase = await createClient();

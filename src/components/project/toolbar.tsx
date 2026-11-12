@@ -186,6 +186,7 @@ function NewTaskDialog() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="What needs to be done?"
+                maxLength={300}
                 aria-label="Task title"
               />
               <p className="text-subtle mt-2 text-xs">
@@ -209,7 +210,10 @@ function NewTaskDialog() {
 
 function ProjectMenu() {
   const { project, canEdit } = useProject();
-  const { workspace, projects } = useWorkspace();
+  const { workspace, projects, viewer } = useWorkspace();
+  // Archiving is for owners, admins and whoever created the project (the database checks this too).
+  const canArchive =
+    workspace.role === "owner" || workspace.role === "admin" || project.createdBy === viewer.id;
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [columns, setColumns] = useState(false);
@@ -255,7 +259,7 @@ function ProjectMenu() {
               <SlidersHorizontal /> Custom fields
             </DropdownMenuItem>
           )}
-          {canEdit && (
+          {canArchive && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
