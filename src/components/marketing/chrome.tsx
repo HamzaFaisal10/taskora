@@ -36,9 +36,6 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
             </>
           ) : (
             <>
-              <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
-                <Link href="/login">Sign in</Link>
-              </Button>
               {viewer === "demo" ? (
                 <Button asChild size="sm" variant="secondary">
                   <Link href="/w/demo">Live demo</Link>
@@ -46,6 +43,9 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
               ) : (
                 <DemoButton size="sm" variant="secondary" label="Live demo" />
               )}
+              <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
+                <Link href="/login">Sign in</Link>
+              </Button>
               <Button asChild size="sm">
                 <Link href="/signup">Start free</Link>
               </Button>
@@ -61,9 +61,15 @@ export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
  * The two main actions, the same for everyone and the same at the top and the bottom of the page:
  * try the demo, or create a workspace.
  */
-export function MainActions({ viewer }: { viewer: MarketingViewer }) {
+export function MainActions({
+  viewer,
+  center = false,
+}: {
+  viewer: MarketingViewer;
+  center?: boolean;
+}) {
   return (
-    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+    <div className={`mt-8 flex flex-col gap-3 sm:flex-row ${center ? "sm:justify-center" : ""}`}>
       {viewer === "out" ? (
         <DemoButton className="sm:w-64" variant="primary" label="Try the live demo" />
       ) : (

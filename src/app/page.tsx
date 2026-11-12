@@ -18,6 +18,19 @@ import {
 } from "@/components/marketing/visuals";
 import { marketingViewer } from "@/lib/marketing-viewer";
 
+const INSIDE = [
+  "Board",
+  "List",
+  "Calendar",
+  "Timeline",
+  "Sprints",
+  "Automations",
+  "Request forms",
+  "Time tracking",
+  "Goals",
+  "AI planning",
+];
+
 const VIEWS = [
   { icon: Columns3, name: "Board", text: "Drag work across your own columns." },
   { icon: List, name: "List", text: "Every task in one dense, editable list." },
@@ -59,22 +72,34 @@ export default async function HomePage() {
     <>
       <MarketingNav viewer={viewer} />
       <main>
-        {/* Hero: the pitch on the left, a board you can actually use on the right. */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,11fr)_minmax(0,13fr)] lg:gap-14 lg:pb-24">
-          <div>
-            <h1 className="text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[3.4rem]">
+        {/* Hero: the pitch and the two main actions in the middle, then a board you can actually use. */}
+        <section className="mx-auto max-w-6xl px-4 pt-16 pb-16 sm:px-6 sm:pt-24 lg:pb-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl">
               Plan the sprint, ship the work, skip the status meeting.
             </h1>
-            <p className="text-muted mt-6 max-w-lg text-lg leading-relaxed">
+            <p className="text-muted mx-auto mt-6 max-w-xl text-lg leading-relaxed">
               Taskora keeps a product team&apos;s tasks, sprints and requests in one fast workspace,
               with rules that handle the busywork. Free for up to five people.
             </p>
-            <MainActions viewer={viewer} />
+            <MainActions viewer={viewer} center />
             <p className="text-subtle mt-4 text-sm">
               The demo needs no sign-up and resets every night.
             </p>
+            <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What's inside">
+              {INSIDE.map((name) => (
+                <li
+                  key={name}
+                  className="border-border bg-surface text-fg-2 rounded-full border px-3 py-1 text-[13px]"
+                >
+                  {name}
+                </li>
+              ))}
+            </ul>
           </div>
-          <HeroBoard />
+          <div className="mx-auto mt-12 max-w-4xl sm:mt-16">
+            <HeroBoard />
+          </div>
         </section>
 
         <section id="features" className="border-border bg-surface/40 scroll-mt-14 border-y">
