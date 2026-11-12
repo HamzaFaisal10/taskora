@@ -67,14 +67,16 @@ export function DemoButton({
   className,
   variant = "ai",
   label = "Try the live demo — no sign-up",
+  size = "lg",
 }: {
   className?: string;
-  variant?: "ai" | "primary";
+  variant?: "ai" | "primary" | "secondary";
   label?: string;
+  size?: "sm" | "lg";
 }) {
   return (
     <form action="/api/demo" method="post" className={className}>
-      <Button type="submit" variant={variant} size="lg" className="w-full">
+      <Button type="submit" variant={variant} size={size} className="w-full">
         {label}
       </Button>
     </form>

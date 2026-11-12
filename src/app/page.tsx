@@ -1,7 +1,11 @@
 import { CalendarDays, Columns3, GanttChart, List, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { DemoButton } from "@/components/auth/forms";
-import { FinalCta, MarketingFooter, MarketingNav } from "@/components/marketing/chrome";
+import {
+  FinalCta,
+  MainActions,
+  MarketingFooter,
+  MarketingNav,
+} from "@/components/marketing/chrome";
 import { HeroBoard } from "@/components/marketing/hero-board";
 import { Faq, PricingPlans } from "@/components/marketing/pricing";
 import {
@@ -12,20 +16,7 @@ import {
   SprintVisual,
   TimeVisual,
 } from "@/components/marketing/visuals";
-import { Button } from "@/components/ui/button";
-import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
-
-async function isSignedIn() {
-  if (!isSupabaseConfigured()) return false;
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    return Boolean(data.user);
-  } catch {
-    return false;
-  }
-}
+import { marketingViewer } from "@/lib/marketing-viewer";
 
 const VIEWS = [
   { icon: Columns3, name: "Board", text: "Drag work across your own columns." },
@@ -63,10 +54,10 @@ function Feature({
 }
 
 export default async function HomePage() {
-  const signedIn = await isSignedIn();
+  const viewer = await marketingViewer();
   return (
     <>
-      <MarketingNav signedIn={signedIn} />
+      <MarketingNav viewer={viewer} />
       <main>
         {/* Hero: the pitch on the left, a board you can actually use on the right. */}
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,11fr)_minmax(0,13fr)] lg:gap-14 lg:pb-24">
@@ -78,18 +69,7 @@ export default async function HomePage() {
               Taskora keeps a product team&apos;s tasks, sprints and requests in one fast workspace,
               with rules that handle the busywork. Free for up to five people.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {signedIn ? (
-                <Button asChild size="lg">
-                  <Link href="/app">Open Taskora</Link>
-                </Button>
-              ) : (
-                <DemoButton className="sm:w-64" variant="primary" label="Try the live demo" />
-              )}
-              <Button asChild size="lg" variant="secondary">
-                <Link href="/signup">Create a free workspace</Link>
-              </Button>
-            </div>
+            <MainActions viewer={viewer} />
             <p className="text-subtle mt-4 text-sm">
               The demo needs no sign-up and resets every night.
             </p>
@@ -215,9 +195,9 @@ export default async function HomePage() {
           <Faq />
         </section>
 
-        <FinalCta />
+        <FinalCta viewer={viewer} />
       </main>
-      <MarketingFooter />
+      <MarketingFooter viewer={viewer} />
     </>
   );
 }

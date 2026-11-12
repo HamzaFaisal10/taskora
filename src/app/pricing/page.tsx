@@ -2,8 +2,7 @@ import { Check, Minus } from "lucide-react";
 import type { Metadata } from "next";
 import { FinalCta, MarketingFooter, MarketingNav } from "@/components/marketing/chrome";
 import { Faq, PricingPlans } from "@/components/marketing/pricing";
-import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { marketingViewer } from "@/lib/marketing-viewer";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -58,21 +57,11 @@ function Value({ v }: { v: Cell }) {
   return <span>{v}</span>;
 }
 
-async function isSignedIn() {
-  if (!isSupabaseConfigured()) return false;
-  try {
-    const { data } = await (await createClient()).auth.getUser();
-    return Boolean(data.user);
-  } catch {
-    return false;
-  }
-}
-
 export default async function PricingPage() {
-  const signedIn = await isSignedIn();
+  const viewer = await marketingViewer();
   return (
     <>
-      <MarketingNav signedIn={signedIn} />
+      <MarketingNav viewer={viewer} />
       <main>
         <section className="mx-auto max-w-6xl px-4 pt-16 pb-12 sm:px-6 sm:pt-20">
           <h1 className="max-w-2xl text-4xl font-semibold tracking-[-0.03em] text-balance sm:text-5xl">
@@ -140,9 +129,9 @@ export default async function PricingPage() {
           <h2 className="mb-6 text-2xl font-semibold tracking-[-0.015em]">Questions</h2>
           <Faq />
         </section>
-        <FinalCta />
+        <FinalCta viewer={viewer} />
       </main>
-      <MarketingFooter />
+      <MarketingFooter viewer={viewer} />
     </>
   );
 }

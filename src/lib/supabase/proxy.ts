@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { cleanKey } from "@/lib/env";
+import { cleanKey, demoEmail } from "@/lib/env";
 
 const PUBLIC_PREFIXES = [
   "/login",
@@ -57,7 +57,9 @@ export async function updateSession(request: NextRequest) {
     login.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(login);
   }
-  if (user && isAuthPage(path)) {
+  // The shared demo visitor has no account of their own, so sign-in and sign-up stay open to them.
+  const isDemoVisitor = String(data?.claims?.email ?? "").toLowerCase() === demoEmail();
+  if (user && !isDemoVisitor && isAuthPage(path)) {
     const home = request.nextUrl.clone();
     home.pathname = "/app";
     home.search = "";
