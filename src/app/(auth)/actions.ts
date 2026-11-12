@@ -100,17 +100,6 @@ export async function updatePassword(_: AuthState, form: FormData): Promise<Auth
   redirect("/app");
 }
 
-export async function signInWithGoogle(form: FormData) {
-  const supabase = await createClient();
-  const next = safeNext(String(form.get("next") ?? ""));
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}` },
-  });
-  if (error || !data.url) redirect("/login?error=google");
-  redirect(data.url);
-}
-
 export async function signOut() {
   const supabase = await createClient();
   // Signs out this browser only; the shared demo account stays signed in for other visitors.
