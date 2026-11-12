@@ -43,6 +43,14 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims?.sub ? { id: data.claims.sub } : null;
   const path = request.nextUrl.pathname;
 
+  // A shared link into the demo workspace opens the demo, with no sign-in step for the visitor.
+  const isDemoPath = path === "/w/demo" || path.startsWith("/w/demo/");
+  if (!user && isDemoPath && !request.nextUrl.searchParams.has("demo")) {
+    const demo = request.nextUrl.clone();
+    demo.pathname = "/api/demo";
+    demo.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
+    return NextResponse.redirect(demo);
+  }
   if (!user && !isPublic(path)) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
