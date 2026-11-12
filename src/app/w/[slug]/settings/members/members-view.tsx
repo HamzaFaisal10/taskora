@@ -26,7 +26,18 @@ export type Member = {
   avatarUrl: string | null;
   role: Role;
 };
-export type Invite = { id: string; email: string; role: Role; expiresAt: string };
+export type Invite = { id: string; email: string; role: Role; expiresAt: string; token: string };
+
+function absolute(link: string) {
+  return link.startsWith("http") ? link : `${location.origin}${link}`;
+}
+
+function copyLink(link: string) {
+  navigator.clipboard
+    .writeText(absolute(link))
+    .then(() => toast.success("Invite link copied"))
+    .catch(() => toast.error("Couldn't copy. Select the link and copy it instead."));
+}
 
 const ROLE_TONE = { owner: "solid", admin: "accent", member: "neutral", guest: "violet" } as const;
 const ROLE_HELP = {
@@ -87,23 +98,29 @@ export function InviteForm({ slug, disabled }: { slug: string; disabled?: boolea
           {state?.error ?? (disabled ? "Invites are turned off in the demo workspace." : undefined)}
         </FieldError>
         {state?.link && (
-          <div className="bg-success-soft text-success-text rounded-card mt-1 flex flex-wrap items-center gap-2 p-3 text-sm">
-            <span className="min-w-0 flex-1">
-              Invite ready for {state.email}. Send them this link:
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                const url = state.link!.startsWith("http")
-                  ? state.link!
-                  : `${location.origin}${state.link}`;
-                navigator.clipboard.writeText(url).then(() => toast.success("Invite link copied"));
-              }}
-            >
-              <Copy /> Copy link
-            </Button>
+          <div className="bg-success-soft text-success-text rounded-card mt-1 space-y-2 p-3 text-sm">
+            <p>
+              Invite ready for {state.email}. Send them this link. They sign up or sign in with that
+              email, then accept.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={absolute(state.link)}
+                aria-label="Invite link"
+                onFocus={(e) => e.target.select()}
+                className="text-fg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="h-10 shrink-0"
+                onClick={() => copyLink(state.link!)}
+              >
+                <Copy /> Copy link
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -200,14 +217,24 @@ export function InviteRow({
         {invite.role}
       </Badge>
       {canEdit && (
-        <Button
-          variant="ghost"
-          size="sm"
-          loading={pending}
-          onClick={() => start(() => revokeInvite(slug, invite.id))}
-        >
-          Revoke
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`Copy invite link for ${invite.email}`}
+            onClick={() => copyLink(`/invite/${invite.token}`)}
+          >
+            <Copy /> <span className="max-sm:sr-only">Link</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            loading={pending}
+            onClick={() => start(() => revokeInvite(slug, invite.id))}
+          >
+            Revoke
+          </Button>
+        </>
       )}
     </li>
   );

@@ -24,7 +24,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/setti
     admin
       ? supabase
           .from("workspace_invites")
-          .select("id, email, role, expires_at")
+          .select("id, email, role, expires_at, token")
           .eq("workspace_id", workspace.id)
           .is("accepted_at", null)
           .gt("expires_at", new Date().toISOString())
@@ -45,8 +45,20 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/setti
     }))
     .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name));
   const invites: Invite[] = (
-    (inviteRows ?? []) as { id: string; email: string; role: Role; expires_at: string }[]
-  ).map((i) => ({ id: i.id, email: i.email, role: i.role, expiresAt: i.expires_at }));
+    (inviteRows ?? []) as {
+      id: string;
+      email: string;
+      role: Role;
+      expires_at: string;
+      token: string;
+    }[]
+  ).map((i) => ({
+    id: i.id,
+    email: i.email,
+    role: i.role,
+    expiresAt: i.expires_at,
+    token: i.token,
+  }));
   const limit = LIMITS[workspace.plan];
   const seats = members.filter((m) => m.role !== "guest").length;
 
