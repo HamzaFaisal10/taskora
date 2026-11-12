@@ -797,6 +797,40 @@ async function main() {
     );
   });
 
+  await test("the invite page sees the invite's state before accepting", async () => {
+    const ws = await as(
+      outsider,
+      () =>
+        one<{ id: string }>("select (public.create_workspace('Preview Co', 'preview-co')).id as id"),
+      { keep: true },
+    );
+    const invitee = await createAuthUser("preview@outside.example", "Preview Person");
+    const invite = await as(
+      outsider,
+      () =>
+        one<{ token: string }>(
+          "insert into public.workspace_invites (workspace_id, email, role, invited_by) values ($1, 'preview@outside.example', 'guest', $2) returning token",
+          [ws.id, outsider],
+        ),
+      { keep: true },
+    );
+    type P = { p: { status: string; workspace?: string; email?: string; role?: string } };
+    const look = (who: string, token: string) =>
+      as(who, () => one<P>("select public.invite_preview($1) as p", [token]));
+    const forInvitee = (await look(invitee, invite.token)).p;
+    assert.equal(forInvitee.status, "ok");
+    assert.equal(forInvitee.workspace, "Preview Co");
+    assert.equal(forInvitee.role, "guest");
+    const forOther = (await look(owner, invite.token)).p;
+    assert.equal(forOther.status, "wrong_email");
+    assert.equal(forOther.email, "p***@outside.example");
+    assert.equal((await look(outsider, invite.token)).p.status, "member");
+    assert.equal((await look(invitee, "no-such-token")).p.status, "invalid");
+    await as(invitee, () => q("select public.accept_invite($1)", [invite.token]), { keep: true });
+    assert.equal((await look(invitee, invite.token)).p.status, "member");
+    assert.equal((await look(owner, invite.token)).p.status, "used");
+  });
+
   await test("a guest invite shares only the projects it names", async () => {
     const ws = await as(
       outsider,
