@@ -74,6 +74,8 @@ export type ProjectData = {
 
 export type TaskDetail = BoardTask & {
   description: string;
+  /** Set when the task is archived: it opens from links but is hidden from boards and lists. */
+  archivedAt: string | null;
   recurrence: Recurrence | null;
   fieldValues: Record<string, FieldValue>;
   creator: Person | null;

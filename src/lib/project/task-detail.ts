@@ -25,13 +25,13 @@ export async function loadTaskDetail(
   const { data: t, error } = await supabase
     .from("tasks")
     .select(
-      "id, number, title, description, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, recurrence, projects!inner(key), creator:profiles!tasks_creator_id_fkey(id, full_name, avatar_url), task_labels(label_id), task_field_values(field_id, value)",
+      "id, number, title, description, status_id, priority, assignee_id, sprint_id, parent_id, start_date, due_date, estimate, position, completed_at, created_at, archived_at, recurrence, projects!inner(key), creator:profiles!tasks_creator_id_fkey(id, full_name, avatar_url), task_labels(label_id), task_field_values(field_id, value)",
     )
     .eq("project_id", p.data.projectId)
     .eq("number", p.data.number)
-    .is("archived_at", null)
     .maybeSingle();
-  if (error || !t) return fail("This task doesn't exist or was archived.");
+  if (error || !t)
+    return fail("This task doesn't exist. It may have been deleted, or the link is incomplete.");
 
   type Row = typeof t & {
     projects: { key: string };
@@ -167,6 +167,7 @@ export async function loadTaskDetail(
       comments: (comments.data ?? []).length,
       completedAt: row.completed_at,
       createdAt: row.created_at,
+      archivedAt: row.archived_at,
       recurring: row.recurrence != null,
       recurrence: row.recurrence,
       fieldValues: Object.fromEntries(row.task_field_values.map((v) => [v.field_id, v.value])),

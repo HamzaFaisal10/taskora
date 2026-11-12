@@ -154,6 +154,15 @@ export async function archiveTask(input: { path: string; taskId: string }): Prom
   return { ok: true, data: null };
 }
 
+export async function restoreTask(input: { path: string; taskId: string }): Promise<Result> {
+  const id = uuid.safeParse(input.taskId);
+  if (!id.success) return fail("Invalid task.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ archived_at: null }).eq("id", id.data);
+  if (error) return fail(message(error));
+  return { ok: true, data: null };
+}
+
 export async function setTaskLabels(input: {
   path: string;
   taskId: string;

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   archiveTask,
   archiveTasks,
+  restoreTask,
   bulkUpdateTasks,
   createTask,
   moveTask,
@@ -46,6 +47,8 @@ type Store = ProjectData & {
   refresh: () => void;
   setLabels: (taskId: string, labelIds: string[]) => void;
   archive: (taskId: string) => void;
+  /** Bring an archived task back onto the board. Resolves to whether it worked. */
+  restore: (taskId: string) => Promise<boolean>;
   bulkUpdate: (
     taskIds: string[],
     patch: Pick<TaskPatch, "statusId" | "priority" | "assigneeId" | "sprintId" | "dueDate">,
@@ -235,6 +238,15 @@ export function ProjectProvider({
         (prev) => prev.filter((t) => t.id !== taskId),
         () => archiveTask({ path: basePath, taskId }),
       );
+    },
+    restore: async (taskId) => {
+      const res = await restoreTask({ path: basePath, taskId });
+      if (!res.ok) {
+        toast.error(res.error);
+        return false;
+      }
+      router.refresh();
+      return true;
     },
     create: async (title, opts) => {
       const { refresh: shouldRefresh = true, ...fields } = opts ?? {};

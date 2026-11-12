@@ -4,6 +4,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { formatDistanceToNowStrict, parseISO, format } from "date-fns";
 import {
   Archive,
+  ArchiveRestore,
   CalendarDays,
   CalendarRange,
   CircleDot,
@@ -193,6 +194,44 @@ function AutoTextarea({
   );
 }
 
+function ArchivedNotice({
+  when,
+  canRestore,
+  onRestore,
+}: {
+  when: string;
+  canRestore: boolean;
+  onRestore: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div
+      role="status"
+      className="bg-warning-soft text-warning-text rounded-card mb-5 flex flex-wrap items-center gap-3 p-3 text-sm"
+    >
+      <Archive className="size-4 shrink-0" aria-hidden />
+      <p className="min-w-0 flex-1">
+        Archived on {new Date(when).toLocaleDateString()}. It&apos;s hidden from the board and
+        lists.
+      </p>
+      {canRestore && (
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            await onRestore();
+            setBusy(false);
+          }}
+        >
+          <ArchiveRestore /> Restore
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function PanelBody({
   detail,
   reload,
@@ -212,6 +251,7 @@ function PanelBody({
     basePath,
     update,
     archive,
+    restore,
     openTask,
     create,
     fields,
@@ -299,7 +339,7 @@ function PanelBody({
           >
             <Link2 />
           </Button>
-          {canEdit && (
+          {canEdit && !local.archivedAt && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" aria-label="More actions">
@@ -312,7 +352,15 @@ function PanelBody({
                   onSelect={() => {
                     archive(task.id);
                     openTask(null);
-                    toast.success(`${task.ref} archived`);
+                    toast.success(`${task.ref} archived`, {
+                      action: {
+                        label: "Undo",
+                        onClick: () =>
+                          void restore(task.id).then(
+                            (ok) => ok && toast.success(`${task.ref} restored`),
+                          ),
+                      },
+                    });
                   }}
                 >
                   <Archive /> Archive task
@@ -329,6 +377,18 @@ function PanelBody({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+        {local.archivedAt && !partial && (
+          <ArchivedNotice
+            when={local.archivedAt}
+            canRestore={canEdit}
+            onRestore={async () => {
+              if (await restore(local.id)) {
+                toast.success(`${local.ref} restored`);
+                reload();
+              }
+            }}
+          />
+        )}
         <DialogPrimitive.Title asChild>
           <AutoTextarea
             value={task.title}
@@ -752,6 +812,7 @@ export function TaskPanel() {
     ? {
         ...boardTask,
         description: "",
+        archivedAt: null,
         recurrence: null,
         fieldValues: {},
         creator: null,
