@@ -2,6 +2,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { Bell, CheckCircle2, FolderKanban } from "lucide-react";
 import Link from "next/link";
 import { NewProjectButton } from "@/components/shell/new-project";
+import { Greeting } from "@/components/shell/greeting";
 import { PageHeader } from "@/components/shell/page-header";
 import { TaskGroup } from "@/components/tasks/task-list";
 import { Card, EmptyState } from "@/components/ui/surface";
@@ -13,11 +14,6 @@ const HEALTH = {
   at_risk: { label: "At risk", className: "text-warning-text" },
   off_track: { label: "Off track", className: "text-danger-text" },
 } as const;
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-}
 
 export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) {
   const { slug } = await params;
@@ -56,7 +52,7 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
   return (
     <>
       <PageHeader
-        title={`${greeting()}, ${viewer.name.split(" ")[0]}`}
+        title={<Greeting name={viewer.name.split(" ")[0]} />}
         description={`Here's what needs you in ${workspace.name}.`}
       />
       <div className="grid gap-3 px-4 py-5 sm:grid-cols-3 sm:px-8">
