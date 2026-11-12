@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ProfileForm } from "@/components/settings/forms";
+import { PasswordForm, ProfileForm } from "@/components/settings/forms";
 import { SettingsSection } from "@/components/settings/section";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -15,6 +15,11 @@ export default async function ProfileSettings({ params }: PageProps<"/w/[slug]/s
         description="How teammates see you across every workspace."
       />
       <ProfileForm slug={slug} name={viewer.name} email={viewer.email} isDemo={workspace.isDemo} />
+      {!workspace.isDemo && (
+        <div className="mt-6">
+          <PasswordForm slug={slug} />
+        </div>
+      )}
     </>
   );
 }

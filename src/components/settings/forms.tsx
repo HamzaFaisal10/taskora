@@ -22,6 +22,7 @@ import {
   deleteWorkspace,
   saveLabel,
   updateProfile,
+  changePassword,
   updateWorkspace,
 } from "@/lib/settings-actions";
 import { cn } from "@/lib/utils";
@@ -313,6 +314,77 @@ export function LabelsManager({
       </Card>
       <LabelDialog slug={slug} open={creating} onOpenChange={setCreating} />
     </>
+  );
+}
+
+export function PasswordForm({ slug }: { slug: string }) {
+  const [error, setError] = useState<string>();
+  const [pending, start] = useTransition();
+  const [formKey, setFormKey] = useState(0);
+  return (
+    <Card className="p-5">
+      <h3 className="mb-1 text-[15px] font-semibold">Password</h3>
+      <p className="text-muted mb-4 text-sm">Change the password you sign in with.</p>
+      <form
+        key={formKey}
+        className="space-y-4"
+        action={(form) =>
+          start(async () => {
+            const res = await changePassword({
+              slug,
+              current: String(form.get("current") ?? ""),
+              next: String(form.get("next") ?? ""),
+              confirm: String(form.get("confirm") ?? ""),
+            });
+            if (!res.ok) return setError(res.error);
+            setError(undefined);
+            setFormKey((k) => k + 1);
+            toast.success("Password changed");
+          })
+        }
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="pw-current">Current password</Label>
+          <Input
+            id="pw-current"
+            name="current"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="pw-next">New password</Label>
+            <Input
+              id="pw-next"
+              name="next"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={72}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pw-confirm">Repeat new password</Label>
+            <Input
+              id="pw-confirm"
+              name="confirm"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={72}
+              required
+            />
+          </div>
+        </div>
+        <FieldError>{error}</FieldError>
+        <Button type="submit" variant="secondary" loading={pending}>
+          Change password
+        </Button>
+      </form>
+    </Card>
   );
 }
 

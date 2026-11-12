@@ -140,3 +140,43 @@ export async function updateProfile(input: { slug: string; fullName: string }): 
   revalidatePath("/w", "layout");
   return { ok: true };
 }
+
+/** Change the signed-in person's password, after checking their current one. */
+export async function changePassword(input: {
+  slug: string;
+  current: string;
+  next: string;
+  confirm: string;
+}): Promise<Result> {
+  const p = z
+    .object({
+      current: z.string().min(1, "Enter your current password."),
+      next: z.string().min(8, "Use at least 8 characters.").max(72, "Use at most 72 characters."),
+    })
+    .safeParse(input);
+  if (!p.success) return { ok: false, error: p.error.issues[0].message };
+  if (p.data.next !== input.confirm) return { ok: false, error: "The new passwords don't match." };
+  if (p.data.next === p.data.current)
+    return { ok: false, error: "Choose a password different from your current one." };
+  const { workspace, viewer } = await getWorkspaceContext(input.slug);
+  if (workspace.isDemo)
+    return { ok: false, error: "The demo account's password can't be changed." };
+  const supabase = await createClient();
+  const check = await supabase.auth.signInWithPassword({
+    email: viewer.email,
+    password: p.data.current,
+  });
+  if (check.error) return { ok: false, error: "Your current password isn't right." };
+  const { error } = await supabase.auth.updateUser({ password: p.data.next });
+  if (error) {
+    return {
+      ok: false,
+      error: /different|same/i.test(error.message)
+        ? "Choose a password different from your current one."
+        : /weak|pwned|leaked/i.test(error.message)
+          ? "That password is too easy to guess. Try a longer one."
+          : "Couldn't change your password. Try again.",
+    };
+  }
+  return { ok: true };
+}
