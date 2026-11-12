@@ -1,4 +1,4 @@
-import { Check, ChevronRight, ShieldCheck } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import {
   FinalCta,
@@ -56,20 +56,7 @@ export default async function HomePage() {
             aria-hidden
           />
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-24">
-            <Link
-              href="#features"
-              className="border-border bg-surface/80 text-fg-2 hover:text-fg hover:border-accent-border group inline-flex items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-[13px] backdrop-blur transition-colors"
-            >
-              <span className="bg-accent text-accent-fg rounded-full px-2 py-0.5 text-xs font-semibold">
-                New
-              </span>
-              AI turns a one-line brief into a plan
-              <ChevronRight
-                className="text-subtle size-3.5 transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
-            <h1 className="from-fg to-fg/65 mt-6 max-w-4xl bg-gradient-to-b bg-clip-text pb-2 text-[2.9rem] leading-[1.02] font-semibold tracking-[-0.045em] text-transparent sm:text-7xl lg:text-[5.4rem]">
+            <h1 className="from-fg to-fg/65 max-w-4xl bg-gradient-to-b bg-clip-text pb-2 text-[2.9rem] leading-[1.02] font-semibold tracking-[-0.045em] text-transparent sm:text-7xl lg:text-[5.4rem]">
               Plan the sprint.
               <br />
               Ship the work.

@@ -7,55 +7,73 @@ import { ScreensStage } from "@/components/marketing/devices";
 import type { MarketingViewer } from "@/lib/marketing-viewer";
 import { cn } from "@/lib/utils";
 
+/** A one-line note above the header, like a product announcement. It scrolls away with the page. */
+function AnnouncementBar() {
+  return (
+    <div className="border-border/60 bg-surface text-fg-2 border-b px-4 py-2 text-center text-[13px] leading-snug">
+      Plan a whole project from a one-line brief with AI, now on every plan.{" "}
+      <Link
+        href="/w/demo"
+        className="text-fg decoration-accent font-medium whitespace-nowrap underline decoration-2 underline-offset-[3px] hover:decoration-[3px]"
+      >
+        Try it in the demo
+      </Link>
+    </div>
+  );
+}
+
 export function MarketingNav({ viewer }: { viewer: MarketingViewer }) {
   return (
-    <header className="border-border/60 bg-bg/85 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link href="/" aria-label="Taskora home">
-          <Logo size={24} />
-        </Link>
-        <nav aria-label="Main" className="text-muted hidden items-center gap-5 text-sm md:flex">
-          <Link href="/#features" className="hover:text-fg">
-            Features
+    <>
+      <AnnouncementBar />
+      <header className="border-border/60 bg-bg/85 sticky top-0 z-40 border-b backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+          <Link href="/" aria-label="Taskora home">
+            <Logo size={24} />
           </Link>
-          <Link href="/pricing" className="hover:text-fg">
-            Pricing
-          </Link>
-          <Link href="/#faq" className="hover:text-fg">
-            FAQ
-          </Link>
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
-          {viewer === "user" ? (
-            <>
-              <Button asChild size="sm" variant="secondary" className="demo-glow">
-                <Link href="/w/demo">Live demo</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/app">Open Taskora</Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              {viewer === "demo" ? (
+          <nav aria-label="Main" className="text-muted hidden items-center gap-5 text-sm md:flex">
+            <Link href="/#features" className="hover:text-fg">
+              Features
+            </Link>
+            <Link href="/pricing" className="hover:text-fg">
+              Pricing
+            </Link>
+            <Link href="/#faq" className="hover:text-fg">
+              FAQ
+            </Link>
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            {viewer === "user" ? (
+              <>
                 <Button asChild size="sm" variant="secondary" className="demo-glow">
                   <Link href="/w/demo">Live demo</Link>
                 </Button>
-              ) : (
-                <DemoButton size="sm" variant="secondary" label="Live demo" glow />
-              )}
-              <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signup">Start free</Link>
-              </Button>
-            </>
-          )}
+                <Button asChild size="sm">
+                  <Link href="/app">Open Taskora</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                {viewer === "demo" ? (
+                  <Button asChild size="sm" variant="secondary" className="demo-glow">
+                    <Link href="/w/demo">Live demo</Link>
+                  </Button>
+                ) : (
+                  <DemoButton size="sm" variant="secondary" label="Live demo" glow />
+                )}
+                <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/signup">Start free</Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }
 
