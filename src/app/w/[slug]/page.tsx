@@ -37,11 +37,17 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
   });
 
   const stats = [
-    { label: "Assigned to you", value: tasks.length, icon: CheckCircle2 },
+    {
+      label: "Assigned to you",
+      value: tasks.length,
+      icon: CheckCircle2,
+      href: `/w/${slug}/my-tasks`,
+    },
     {
       label: "Overdue",
       value: overdue.length,
       icon: CheckCircle2,
+      href: `/w/${slug}/my-tasks?filter=overdue`,
       tone: overdue.length ? "text-danger-text" : undefined,
     },
     { label: "Unread updates", value: unreadCount, icon: Bell, href: `/w/${slug}/inbox` },
@@ -56,19 +62,21 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[slug]">) 
       <div className="grid gap-3 px-4 py-5 sm:grid-cols-3 sm:px-8">
         {stats.map((s) => {
           const body = (
-            <Card className="p-4">
+            <Card className="hover:bg-elevated p-4 transition-colors">
               <div className="text-muted text-xs">{s.label}</div>
               <div className={`mt-1 text-2xl font-semibold tabular-nums ${s.tone ?? ""}`}>
                 {s.value}
               </div>
             </Card>
           );
-          return s.href ? (
-            <Link key={s.label} href={s.href}>
+          return (
+            <Link
+              key={s.label}
+              href={s.href}
+              className="rounded-card focus-visible:outline-accent block focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
               {body}
             </Link>
-          ) : (
-            <div key={s.label}>{body}</div>
           );
         })}
       </div>
